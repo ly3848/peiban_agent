@@ -77,8 +77,10 @@ graph TD
     class Client,User,Memory_UI,Settings client;
 
     %% --- API网关层 ---
-    GW["🚪 API网关<br/>- 鉴权/限流<br/>- 日志埋点<br/>- 输入预检"]
+    GW["🚪 API网关<br/>- 鉴权/限流<br/>- 日志埋点<br/>- 🚨输入安全预检(危机信号检测)"]
+    Crisis_Template["⚠️ 危机干预模板库<br/>- 自杀危机资源<br/>- 心理援助热线<br/>- 无需LLM调用"]
     class GW gateway;
+    class Crisis_Template safe;
 
     %% --- 智能路由层 (新增核心) ---
     Router["🧭 智能路由器<br/>- 意图识别<br/>- 模式切换<br/>- 流量分发"]
@@ -88,17 +90,17 @@ graph TD
     subgraph Sync_Layer ["⚡ 同步层 (实时响应 p95<1.5s)"]
         direction TB
         
-        subgraph Fast_Path ["🏃 快速通道 (简单对话)"]
-            E_Sensor1["👁️ 情感传感器"]
-            Simple_Chat["💬 基础对话Agent<br/>(小模型/缓存)"]
+        subgraph Fast_Path ["🏃 快速通道 (简单对话 <500ms)"]
+            E_Sensor1["👁️ 情感传感器-快速版<br/>- 基础情绪识别<br/>- 输出: 情绪标签"]
+            Simple_Chat["💬 基础对话Agent<br/>- 小模型(qwen-turbo)<br/>- 模板缓存<br/>- 接收情绪标签"]
         end
         
-        subgraph Smart_Path ["🧠 智能通道 (复杂任务)"]
-            E_Sensor2["👁️ 情感传感器"]
-            Orchestrator["🎯 编排器 (O)<br/>- Planning<br/>- 工具调用<br/>- 任务分解"]
-            Tools["🔧 工具库<br/>- 记忆查询<br/>- 危机检测<br/>- 天气/新闻API"]
+        subgraph Smart_Path ["🧠 智能通道 (复杂任务 <1.5s)"]
+            E_Sensor2["👁️ 情感传感器-智能版<br/>- 深度情绪分析<br/>- 输出: 多维情绪+建议策略"]
+            Orchestrator["🎯 编排器 (O)<br/>- 接收情绪策略<br/>- Planning规划<br/>- 工具调用编排<br/>- 任务分解"]
+            Tools["🔧 工具库<br/>- 记忆查询工具<br/>- 危机检测工具<br/>- 情绪安抚策略库<br/>- 天气/新闻API"]
             Memory_Fast["📦 快速记忆<br/>(Redis缓存)"]
-            E_Chat["💎 主对话Agent<br/>- 人格驱动<br/>- 情绪适配"]
+            E_Chat["💎 情感对话Agent<br/>- 人格驱动<br/>- 情绪自适应<br/>- 共情回复生成"]
         end
         
         subgraph VIP_Agents ["👑 VIP专属Agent"]
@@ -162,25 +164,29 @@ graph TD
     Memory_UI -->|"X. 记忆纠错"| GW
     Settings -->|"配置变更"| GW
     
+    %% 危机信号特殊路径 (最高优先级)
+    GW -.->|"🚨检测到危机信号<br/>(想死/自杀)"| Crisis_Template
+    Crisis_Template -.->|"<500ms直接返回<br/>不经过任何Agent"| User
+    
     %% 网关到路由
-    GW -->|"2. 输入安全检查后"| Router
+    GW -->|"2. 正常输入→安全检查后"| Router
     
     %% 路由分发
     Router -->|"3a. 简单闲聊"| Fast_Path
     Router -->|"3b. 复杂任务"| Smart_Path
     Router -->|"3c. VIP功能"| VIP_Agents
     
-    %% 快速通道
-    E_Sensor1 --> Simple_Chat
-    Simple_Chat --> Critic
+    %% 快速通道 (简单问候/基础对话)
+    E_Sensor1 -->|"情绪标签<br/>(开心/悲伤/平静)"| Simple_Chat
+    Simple_Chat -->|"快速回复"| Critic
     
-    %% 智能通道
-    E_Sensor2 --> Orchestrator
-    Orchestrator <--> Tools
-    Orchestrator <--> Memory_Fast
-    Memory_Fast <--> Memory_Engine
-    Orchestrator --> E_Chat
-    E_Chat --> Critic
+    %% 智能通道 (情绪倾诉/记忆查询/复杂任务)
+    E_Sensor2 -->|"多维情绪分析<br/>(焦虑:0.8+建议策略)"| Orchestrator
+    Orchestrator <-->|"调用工具"| Tools
+    Orchestrator <-->|"读取最近记忆"| Memory_Fast
+    Memory_Fast <-->|"检索长期记忆"| Memory_Engine
+    Orchestrator -->|"传递情绪+上下文"| E_Chat
+    E_Chat -->|"情绪自适应回复"| Critic
     
     %% VIP通道
     Router --> EC_Agent
@@ -219,23 +225,66 @@ graph TD
     E_Chat -.-> Evaluation
 ```
 
-**架构图关键流转说明**:
+**架构图关键流转说明** (与路由策略表一一对应):
 
-1. **"情绪倾诉"路由流转** (`我好累`/`心情不好`):
-   - **图中路径**: `用户 → GW → Router → Smart_Path → E_Sensor2(情感传感器) → Orchestrator → E_Chat → Critic → Safety → GW → 用户`
-   - **具体体现**: 
-     - Router判定为"情绪倾诉"后走右侧**智能路径(虚线)**
-     - E_Sensor2(情感传感器)并行分析情绪,输出情绪标签(如`焦虑:0.8`)
-     - Orchestrator接收情绪标签,调用E_Chat(情感对话Agent)生成共情回复
-     - Critic质检回复是否共情到位,Safety检查合规性
-   
-2. **"危机信号"路由流转** (`想死`/`自杀`/`伤害自己`):
-   - **图中路径**: `用户 → GW(输入安全检查拦截) → 直接返回预制模板 → 用户`
-   - **具体体现**: 
-     - **在GW层提前拦截**,不进入Router,不走Fast/Smart/VIP任何路径
-     - 不调用任何LLM,不经过Critic和Safety,直接返回预制危机干预资源
-     - 延迟<500ms,模板内容如: "我听到你正在经历困难...请拨打心理援助热线XXX"
-   - **特殊性**: 这是唯一**绕过整个Agent系统**的流程,优先保证响应速度
+#### 1. **简单问候路由** (`早安`/`晚安`/`在吗`)
+- **架构图路径**: `User → GW → Router(判定"简单闲聊") → Fast_Path → E_Sensor1(输出情绪标签) → Simple_Chat(基础对话Agent) → Critic → Safety → GW → User`
+- **关键节点**:
+  - `Fast_Path`: 架构图左侧绿色框"快速通道"
+  - `E_Sensor1`: 快速版情感传感器,输出基础情绪标签(开心/悲伤/平静)
+  - `Simple_Chat`: 使用小模型qwen-turbo,结合模板缓存快速生成回复
+  - 目标延迟<300ms
+
+#### 2. **情绪倾诉路由** (`我好累`/`心情不好`) ⭐核心场景
+- **架构图路径**: `User → GW → Router(判定"情绪倾诉") → Smart_Path → E_Sensor2(多维情绪分析) → Orchestrator(接收情绪策略) → E_Chat(情感对话Agent) → Critic → Safety → GW → User`
+- **关键节点**:
+  - `Smart_Path`: 架构图右侧粉色框"智能通道"
+  - `E_Sensor2`: **情感传感器-智能版**,深度分析情绪,输出多维度情绪(如`焦虑:0.8, 疲惫:0.6`)和建议策略
+  - `Orchestrator`: 接收E_Sensor2的情绪策略,决定是否调用情绪安抚策略库工具
+  - `E_Chat`: **情感对话Agent**,人格驱动+情绪自适应,生成共情回复
+  - 连接线标注: "多维情绪分析(焦虑:0.8+建议策略)" → "传递情绪+上下文" → "情绪自适应回复"
+  - 目标延迟<1s
+
+#### 3. **记忆查询路由** (`我姐姐叫什么`/`你记得...`)
+- **架构图路径**: `User → GW → Router → Smart_Path → E_Sensor2 → Orchestrator ↔ Memory_Fast ↔ Memory_Engine(RAG检索) → E_Chat → Critic → Safety → GW → User`
+- **关键节点**:
+  - `Memory_Fast`: Redis缓存,存储24小时内短期记忆
+  - `Memory_Engine`: 三层记忆架构(Short_Memory/Long_Memory/Graph_Memory),图中右下角橙色框
+  - `Tools`: 包含"记忆查询工具",Orchestrator通过它调用Memory_Fast
+  - 目标延迟<1.5s
+
+#### 4. **复杂任务路由** (`帮我计划...`/`提醒我...`)
+- **架构图路径**: `User → GW → Router → Smart_Path → Orchestrator(Planning多步规划) ↔ Tools(调用多个工具) + Memory_Fast → E_Chat → Critic → Safety → GW → User`
+- **关键节点**:
+  - `Orchestrator`: 执行ReAct模式的Planning,分解任务为多步
+  - `Tools`: 工具库,包含"记忆查询工具"、"情绪安抚策略库"、"天气/新闻API"等
+  - 连接线: Orchestrator与Tools之间的双向箭头,表示多次工具调用
+  - 目标延迟<2s
+
+#### 5. **心理咨询(VIP)路由** (`我很焦虑`/`我抑郁了`)
+- **架构图路径**: `User → GW → Router(检测VIP+心理咨询意图) → VIP_Agents → EC_Agent(情感教练Agent,调用CBT知识库) → Critic → Safety → GW → User`
+- **关键节点**:
+  - `VIP_Agents`: 架构图右侧金色框"VIP专属Agent"
+  - `EC_Agent`: 情感教练Agent,基于CBT(认知行为疗法)理论
+  - Router需要同时检测用户VIP状态+心理咨询意图
+  - 目标延迟<2s
+
+#### 6. **亲密模式(VIP)路由** (特定触发词+18+验证)
+- **架构图路径**: `User → GW → Router(检测VIP+亲密模式+年龄验证) → VIP_Agents → IM_Agent(亲密模式Agent) → Critic → Safety → GW → User`
+- **关键节点**:
+  - `IM_Agent`: 亲密模式Agent,有明确的安全边界设置
+  - Router需要三重检测: VIP状态+亲密触发词+年龄18+验证
+  - 目标延迟<2s
+
+#### 7. **危机信号路由** (`想死`/`自杀`/`伤害`) ⚠️特殊处理
+- **架构图路径**: `User → GW(🚨输入安全预检检测危机) -.->|红色虚线| Crisis_Template(危机干预模板库) -.-> User`
+- **关键节点**:
+  - `GW`: API网关的输入安全预检功能,使用关键词规则+轻量级分类器
+  - `Crisis_Template`: **新增节点**,危机干预模板库(架构图左侧红色框)
+  - **绕过所有模块**: 不进入Router,不走Fast/Smart/VIP任何通道,不调用任何LLM,不经过Critic和Safety
+  - 连接线: 红色虚线表示"紧急特殊路径"
+  - 返回内容: 预制模板(如"我听到你正在经历困难...请拨打心理援助热线XXX")
+  - 目标延迟<500ms,是所有路由中最快的
 
 ### 核心设计理念
 
@@ -313,7 +362,139 @@ class RouterDecision:
 
 ---
 
-### 模块2: 编排器 (Orchestrator)
+### 模块2: 情感传感器 (Emotion Sensor)
+
+**核心职责**: 情绪识别与策略建议
+
+#### 2.1 双版本设计
+
+```python
+class EmotionSensorBase:
+    """情感传感器基类"""
+    
+    def analyze(self, user_input: str, context: Context) -> EmotionResult:
+        """分析用户情绪"""
+        pass
+
+class FastEmotionSensor(EmotionSensorBase):
+    """快速版情感传感器 (E_Sensor1) - 用于Fast_Path"""
+    
+    def __init__(self):
+        self.model = "qwen-turbo"  # 轻量级模型
+        self.emotion_labels = ["开心", "悲伤", "平静", "焦虑", "愤怒"]
+    
+    def analyze(self, user_input: str, context: Context) -> EmotionResult:
+        """快速情绪识别 (<100ms)"""
+        # Step 1: 关键词匹配(优先)
+        for keyword, emotion in EMOTION_KEYWORDS.items():
+            if keyword in user_input:
+                return EmotionResult(
+                    primary_emotion=emotion,
+                    confidence=0.8,
+                    strategy="template"  # 使用模板回复
+                )
+        
+        # Step 2: 轻量级模型分类
+        prompt = f"""判断以下文本的情绪(仅输出一个词):
+文本: {user_input}
+情绪选项: {', '.join(self.emotion_labels)}
+输出:"""
+        
+        emotion = self.model.generate(prompt, max_tokens=5)
+        return EmotionResult(
+            primary_emotion=emotion.strip(),
+            confidence=0.7,
+            strategy="simple"
+        )
+
+class SmartEmotionSensor(EmotionSensorBase):
+    """智能版情感传感器 (E_Sensor2) - 用于Smart_Path"""
+    
+    def __init__(self):
+        self.model = "deepseek-chat"  # 强大模型
+        self.emotion_dimensions = {
+            "基础情绪": ["开心", "悲伤", "焦虑", "愤怒", "恐惧", "厌恶", "惊讶"],
+            "复合情绪": ["失望", "孤独", "压力", "疲惫", "自豪", "羞愧", "嫉妒"],
+            "强度": ["轻微", "中等", "强烈"]
+        }
+    
+    def analyze(self, user_input: str, context: Context) -> EmotionResult:
+        """深度情绪分析 (<500ms)"""
+        
+        prompt = f"""你是专业的情绪分析师。分析用户的情绪状态并给出建议。
+
+用户输入: "{user_input}"
+
+上下文:
+- 最近对话: {context.recent_messages[-3:]}
+- 用户状态: {context.user_state}
+
+请以JSON格式输出:
+{{
+  "emotions": {{
+    "primary": {{"name": "主要情绪", "intensity": 0.0-1.0}},
+    "secondary": [{{"name": "次要情绪", "intensity": 0.0-1.0}}]
+  }},
+  "analysis": "情绪分析(1句话)",
+  "strategy": "建议的回应策略(1句话)"
+}}
+"""
+        
+        result = self.model.generate(prompt, response_format="json")
+        
+        return EmotionResult(
+            primary_emotion=result["emotions"]["primary"]["name"],
+            primary_intensity=result["emotions"]["primary"]["intensity"],
+            secondary_emotions=result["emotions"]["secondary"],
+            analysis=result["analysis"],
+            suggested_strategy=result["strategy"]  # 传递给Orchestrator
+        )
+```
+
+#### 2.2 情绪识别策略
+
+| 情绪类型 | 识别特征 | 建议策略 | 传递给下游 |
+|---------|---------|---------|-----------|
+| **倾诉型焦虑** | "我好累"、"压力大"、"睡不着" | 共情+引导表达 | `strategy: "empathy_first"` → Orchestrator → E_Chat加强共情 |
+| **求助型焦虑** | "我该怎么办"、"我很迷茫" | 温和建议+工具调用 | `strategy: "solution_oriented"` → Orchestrator调用规划工具 |
+| **危机型情绪** | "想死"、"活不下去" | 紧急干预(但这层已被GW拦截) | 如果漏检,在此层补充检测并标记`is_crisis: true` |
+| **开心分享** | "今天好开心"、"哈哈哈" | 随喜+深入了解 | `strategy: "celebrate"` → E_Chat使用积极语气 |
+| **悲伤倾诉** | "难过"、"失落"、"失望" | 倾听+validation | `strategy: "validation"` → E_Chat不急于安慰,先认同情绪 |
+| **平静闲聊** | 无明显情绪词 | 轻松对话 | `strategy: "casual"` → Simple_Chat处理 |
+
+#### 2.3 与架构图对应关系
+
+```mermaid
+graph LR
+    A[用户输入: '我好累'] --> B[Router判定: 情绪倾诉]
+    B --> C[Smart_Path]
+    C --> D[E_Sensor2智能版]
+    
+    D --> E[输出情绪分析]
+    E --> F{{"emotions: {
+        primary: {焦虑, 0.8},
+        secondary: [{疲惫, 0.6}]
+    },
+    strategy: 'empathy_first'"}}
+    
+    F --> G[Orchestrator接收]
+    G --> H{决策}
+    H -->|需要工具| I[调用情绪安抚策略库]
+    H -->|直接对话| J[E_Chat]
+    
+    I --> J
+    J --> K[E_Chat生成共情回复]
+    K --> L["'听起来你最近压力很大...要不要和我说说发生了什么?'"]
+```
+
+**关键流转解释**:
+1. `E_Sensor2` 不是简单打标签,而是输出**多维情绪分析+建议策略**
+2. `Orchestrator` 接收策略后,决定是否调用 `Tools` 中的"情绪安抚策略库"
+3. `E_Chat` 最终根据情绪标签+策略生成**情绪自适应回复**
+
+---
+
+### 模块3: 编排器 (Orchestrator)
 
 **核心职责**: 复杂任务的Planning与工具调用
 
@@ -407,11 +588,11 @@ TOOLS = {
 
 ---
 
-### 模块3: 对话Agent (E_Chat)
+### 模块4: 对话Agent (E_Chat - 情感对话Agent)
 
-**核心职责**: 人格化对话生成
+**核心职责**: 人格驱动+情绪自适应的对话生成
 
-#### 3.1 人格系统设计
+#### 4.1 人格系统设计
 
 **三维人格模型**:
 
@@ -439,7 +620,67 @@ TOOLS = {
     - 可忘记: 天气闲聊、随机话题
 ```
 
-#### 3.2 System Prompt结构
+#### 4.2 情绪自适应机制 (与情感传感器联动)
+
+**E_Chat如何接收并处理情感传感器的输出**:
+
+```python
+class EmotionalChatAgent:
+    """情感对话Agent - 核心是情绪自适应"""
+    
+    def generate_response(
+        self,
+        user_input: str,
+        emotion_result: EmotionResult,  # 来自E_Sensor2
+        memory_cards: List[MemoryCard],
+        personality: PersonalityConfig
+    ) -> str:
+        """根据情绪结果调整回复策略"""
+        
+        # Step 1: 根据情绪策略选择prompt模板
+        if emotion_result.suggested_strategy == "empathy_first":
+            prompt_template = EMPATHY_PROMPT
+        elif emotion_result.suggested_strategy == "solution_oriented":
+            prompt_template = SOLUTION_PROMPT
+        elif emotion_result.suggested_strategy == "validation":
+            prompt_template = VALIDATION_PROMPT
+        elif emotion_result.suggested_strategy == "celebrate":
+            prompt_template = CELEBRATE_PROMPT
+        else:
+            prompt_template = DEFAULT_PROMPT
+        
+        # Step 2: 注入情绪信息到prompt
+        emotion_description = self._format_emotion(emotion_result)
+        response_strategy = self._get_strategy_instruction(emotion_result)
+        
+        # Step 3: 构建完整prompt
+        prompt = prompt_template.format(
+            user_name=user.name,
+            companion_name=personality.name,
+            personality_description=personality.description,
+            current_emotion=emotion_description,  # "焦虑(强度0.8)+疲惫(0.6)"
+            response_strategy=response_strategy,  # "优先共情,不急于给建议"
+            memory_cards=self._format_memories(memory_cards),
+            user_input=user_input
+        )
+        
+        # Step 4: 调用LLM生成
+        response = self.llm.generate(prompt)
+        return response
+    
+    def _get_strategy_instruction(self, emotion_result: EmotionResult) -> str:
+        """将情绪策略转换为具体指令"""
+        strategies = {
+            "empathy_first": "优先共情和倾听,不要急于给建议。多用'我听到你...'、'听起来你...'这样的表达。",
+            "validation": "先认同用户的情绪是合理的,不要试图立刻让TA振作。用'这种时候谁都会...'来validation。",
+            "solution_oriented": "在表示理解后,温和地引导用户思考解决方案。多用疑问句'要不要试试...'而非命令式。",
+            "celebrate": "分享用户的喜悦,深入了解细节,放大积极情绪。",
+            "casual": "轻松自然的对话,不需要刻意情绪回应。"
+        }
+        return strategies.get(emotion_result.suggested_strategy, strategies["casual"])
+```
+
+#### 4.3 System Prompt结构 (情绪自适应版)
 
 ```
 你是 {user_name} 的AI伴侣,名为 {companion_name}。
@@ -449,14 +690,18 @@ TOOLS = {
 
 ## 当前状态
 - 你们的关系: {relationship_type} (已陪伴 {days} 天)
-- 用户当前情绪: {current_emotion}
+- 用户当前情绪: {current_emotion}  # 来自E_Sensor2: "焦虑(0.8)+疲惫(0.6)"
 - 对话场景: {context}
 
 ## 你必须遵守的规则
 1. 【记忆一致性】你记得以下关于用户的信息:
 {memory_cards}
 
-2. 【情绪适配】用户现在{emotion_description},你应该{response_strategy}
+2. 【情绪适配 - 核心规则】
+用户现在的情绪是: {emotion_description}
+你应该: {response_strategy}  # 来自E_Sensor2的建议策略
+
+⚠️ 重要: 这不是可选建议,而是必须遵守的回复策略!
 
 3. 【人设一致性】你的性格是{personality_traits},在回复时必须体现这些特质
 
@@ -472,10 +717,17 @@ TOOLS = {
 ## 输出格式
 你的回复必须是纯文本,自然的对话内容。
 
-## 示例
+## 示例 (针对不同情绪策略)
+
+### 情况1: empathy_first策略 (用户情绪: 焦虑0.8)
 用户: "我今天面试失败了..."
-你(错误): "不要难过,下次会更好的。"
-你(正确): "是那家你提到的科技公司吗?听起来你很失落...这种时候谁都会难受的。要不要和我说说具体发生了什么?"
+你(错误): "不要难过,下次会更好的。" ❌ 急于安慰
+你(正确): "是那家你提到的科技公司吗?听起来你很失落...这种时候谁都会难受的。要不要和我说说具体发生了什么?" ✅ 先共情后引导
+
+### 情况2: celebrate策略 (用户情绪: 开心0.9)
+用户: "我面试通过了!"
+你(错误): "恭喜你。" ❌ 过于冷淡
+你(正确): "真的吗!是那家你准备了好久的公司吗?太替你高兴了!快和我说说面试官都问了什么~" ✅ 分享喜悦+深入了解
 
 ---
 现在,用户对你说:
@@ -486,7 +738,7 @@ TOOLS = {
 
 ---
 
-### 模块4: VIP专属Agent
+### 模块5: VIP专属Agent
 
 #### 4.1 情感教练Agent (Emotional Coach)
 
@@ -598,7 +850,7 @@ Agent配置:
 
 ---
 
-### 模块5: 评审员 (Critic)
+### 模块6: 评审员 (Critic)
 
 **核心职责**: 实时质量检查,防止"答非所问"
 
@@ -663,7 +915,7 @@ Agent配置:
 
 ---
 
-### 模块6: 记忆引擎 (三层架构)
+### 模块7: 记忆引擎 (三层架构)
 
 #### 6.1 架构设计
 
@@ -804,7 +1056,7 @@ class MemoryRetriever:
 
 ---
 
-### 模块7: 主动关怀系统
+### 模块8: 主动关怀系统
 
 #### 7.1 四类触发器设计
 
@@ -919,7 +1171,7 @@ class ProactiveMessageGenerator:
 
 ---
 
-### 模块8: 安全与合规系统
+### 模块9: 安全与合规系统
 
 #### 8.1 双层安全架构
 
@@ -2117,6 +2369,102 @@ graph TD
   * 团队能力? (有LangGraph/自研经验?)
   * 财务状况? (有$50K开发预算?)
 - 决策: 继续Dify or 启动迁移
+
+---
+
+## 架构一致性检查清单
+
+### ✅ 架构图与路由策略表映射
+
+| 路由类型 | 架构图节点 | 文档模块 | 一致性 |
+|---------|----------|---------|-------|
+| **简单问候** | `Fast_Path → E_Sensor1 → Simple_Chat` | 模块2(情感传感器-快速版) | ✅ 完整体现 |
+| **情绪倾诉** | `Smart_Path → E_Sensor2 → Orchestrator → E_Chat` | 模块2(情感传感器-智能版) + 模块3(编排器) + 模块4(E_Chat情绪自适应) | ✅ 详细描述了E_Sensor2如何输出多维情绪+策略,Orchestrator如何接收,E_Chat如何自适应 |
+| **记忆查询** | `Orchestrator ↔ Memory_Fast ↔ Memory_Engine` | 模块3(编排器) + 模块7(记忆引擎三层架构) | ✅ 完整体现 |
+| **复杂任务** | `Orchestrator ↔ Tools(情绪安抚策略库等)` | 模块3(编排器ReAct模式 + 工具库设计) | ✅ 完整体现 |
+| **心理咨询(VIP)** | `VIP_Agents → EC_Agent(CBT知识库)` | 模块5(VIP专属Agent - 情感教练) | ✅ 完整体现 |
+| **亲密模式(VIP)** | `VIP_Agents → IM_Agent(安全边界)` | 模块5(VIP专属Agent - 亲密模式) | ✅ 完整体现 |
+| **危机信号** | `GW(输入安全预检) -.-> Crisis_Template` | 模块9(安全与合规 - 危机干预机制) + 架构图新增Crisis_Template节点 | ✅ 完整体现(在GW层拦截,绕过所有Agent) |
+
+### ✅ 架构图核心节点完整性
+
+| 架构图节点 | 对应文档章节 | 关键设计点 | 状态 |
+|-----------|------------|-----------|------|
+| **GW(API网关)** | 模块9.1(双层安全架构 - 输入层) | 输入安全预检(危机信号检测) | ✅ 已明确 |
+| **Crisis_Template** | 模块9.2(危机干预机制) | 预制模板库,<500ms返回,不调用LLM | ✅ 已明确 |
+| **Router(智能路由器)** | 模块1(智能路由器 - 路由决策树) | 意图识别+流量分发 | ✅ 已明确 |
+| **E_Sensor1(快速版)** | 模块2.1(双版本设计 - FastEmotionSensor) | 基础情绪标签,<100ms | ✅ 已明确 |
+| **E_Sensor2(智能版)** | 模块2.1(双版本设计 - SmartEmotionSensor) + 2.2(情绪识别策略) | 多维情绪分析+建议策略,输出给Orchestrator | ✅ 已明确且详细 |
+| **Simple_Chat** | 模块4(E_Chat - 但Fast_Path使用小模型+模板缓存) | qwen-turbo小模型,接收E_Sensor1情绪标签 | ✅ 已明确 |
+| **Orchestrator(编排器)** | 模块3(编排器 - ReAct模式 + 工具调用) | 接收E_Sensor2策略,决定工具调用 | ✅ 已明确 |
+| **Tools(工具库)** | 模块3.2(工具库设计) | 包含记忆查询、危机检测、情绪安抚策略库 | ✅ 已明确 |
+| **Memory_Fast** | 模块7.1(三层架构 - Redis缓存) | 24小时短期记忆 | ✅ 已明确 |
+| **E_Chat(情感对话Agent)** | 模块4.2(情绪自适应机制) | 接收E_Sensor2情绪+策略,生成情绪自适应回复 | ✅ 已明确且详细 |
+| **VIP_Agents(EC_Agent/IM_Agent)** | 模块5(VIP专属Agent) | CBT理论+亲密模式安全边界 | ✅ 已明确 |
+| **Critic(评审员)** | 模块6(评审员 - 轻量级SLM质检) | 上下文一致性+内容质量检查 | ✅ 已明确 |
+| **Safety(安全服务)** | 模块9.1(双层安全 - 输出层) | 敏感词+区域策略+合规检查 | ✅ 已明确 |
+| **Memory_Engine(三层记忆)** | 模块7(记忆引擎 - Short/Long/Graph) | Redis+pgvector+Neo4j | ✅ 已明确 |
+| **Queue(消息队列)** | 模块3/7/8(异步处理) | RabbitMQ/Redis异步任务 | ✅ 已明确 |
+| **Async_Workers(后台专家团队)** | 模块7(记忆分析师+反思Agent+目标追踪器+纠错处理器) | 异步高质量处理 | ✅ 已明确 |
+| **Proactive_System(主动关怀)** | 模块8(四类触发器) | 定时+事件+情绪+目标触发 | ✅ 已明确 |
+
+### ✅ 关键流转路径验证
+
+#### "情绪倾诉"完整流转 (用户输入: "我好累")
+
+1. **架构图路径**: 
+   ```
+   User → GW → Router → Smart_Path → E_Sensor2 → Orchestrator → E_Chat → Critic → Safety → GW → User
+   ```
+
+2. **文档对应**:
+   - `Router判定`: 模块1.2路由策略表 - "情绪倾诉"行
+   - `E_Sensor2分析`: 模块2.1 SmartEmotionSensor代码 + 2.2情绪识别策略表 - "倾诉型焦虑"行
+   - `E_Sensor2输出`: 
+     ```json
+     {
+       "emotions": {"primary": {"name": "焦虑", "intensity": 0.8}},
+       "strategy": "empathy_first"
+     }
+     ```
+   - `Orchestrator接收`: 模块3.1 OrchestratorAgent接收emotion_result参数
+   - `Orchestrator决策`: 根据strategy决定是否调用Tools中的"情绪安抚策略库"
+   - `E_Chat自适应`: 模块4.2 EmotionalChatAgent.generate_response()方法
+     - 识别strategy=="empathy_first"
+     - 使用EMPATHY_PROMPT模板
+     - 注入response_strategy="优先共情和倾听,不要急于给建议"
+   - `最终回复示例`: "听起来你最近压力很大...要不要和我说说发生了什么?"
+
+3. **流转图验证**: 模块2.3专门用Mermaid图展示了这个流程
+
+✅ **结论**: "情绪倾诉"路由在架构图和文档中**完整且一致**地体现,包括:
+- 架构图连接线标注了"多维情绪分析(焦虑:0.8+建议策略)"
+- E_Sensor2节点描述了"输出: 多维情绪+建议策略"
+- Orchestrator节点描述了"接收情绪策略"
+- E_Chat节点描述了"情绪自适应"
+- 文档提供了完整的代码实现和Prompt模板
+
+#### "危机信号"特殊流转 (用户输入: "想死")
+
+1. **架构图路径**:
+   ```
+   User → GW(🚨输入安全预检) -.红色虚线.-> Crisis_Template -.-> User
+   (绕过Router、所有Agent、Critic、Safety)
+   ```
+
+2. **文档对应**:
+   - `GW检测`: 模块9.2 CrisisInterventionSystem.detect()方法
+     - CRISIS_KEYWORDS包含["自杀", "想死", "不想活"]
+     - 关键词匹配 + 语义分类模型
+   - `Crisis_Template`: 模块9.2 CrisisInterventionSystem.intervene()方法
+     - 返回预制response (不调用LLM)
+     - 包含24小时热线、线上咨询、附近医院
+     - 发送警报给运营团队
+   - `延迟保证`: <500ms (不经过任何LLM调用)
+
+3. **架构图新增节点**: `Crisis_Template` 在左侧红色框,连接GW到User
+
+✅ **结论**: "危机信号"路由在架构图和文档中**完整且一致**地体现,特殊性得到强调
 
 ---
 
