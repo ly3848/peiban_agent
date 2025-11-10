@@ -1,0 +1,419 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="ai-companion-arch" name="AI伴侣Agent架构">
+    <mxGraphModel dx="1434" dy="844" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1400">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- 客户端层 -->
+        <mxCell id="client-layer" value="🎨 客户端层 (iOS/Android)" style="swimlane;fillColor=#e0f2fe;strokeColor=#0284c7;strokeWidth=2;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="user-ui" value="👤 用户界面" style="rounded=1;fillColor=#bfdbfe;strokeColor=#0284c7;" vertex="1" parent="client-layer">
+          <mxGeometry x="20" y="40" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="memory-ui" value="💭 记忆管理界面" style="rounded=1;fillColor=#bfdbfe;strokeColor=#0284c7;" vertex="1" parent="client-layer">
+          <mxGeometry x="160" y="40" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="settings" value="⚙️ 设置中心" style="rounded=1;fillColor=#bfdbfe;strokeColor=#0284c7;" vertex="1" parent="client-layer">
+          <mxGeometry x="90" y="90" width="120" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- API网关 -->
+        <mxCell id="gateway" value="🚪 API网关&#xa;- 鉴权/限流&#xa;- 日志埋点&#xa;- 🚨输入安全预检" style="rounded=1;fillColor=#fef3c7;strokeColor=#f59e0b;strokeWidth=2;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="150" y="250" width="180" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- 危机干预模板库 -->
+        <mxCell id="crisis-template" value="⚠️ 危机干预模板库&#xa;- 自杀危机资源&#xa;- 心理援助热线&#xa;- 无需LLM调用&#xa;&lt;500ms直接返回" style="rounded=1;fillColor=#fca5a5;strokeColor=#b91c1c;strokeWidth=3;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="400" y="240" width="160" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- 智能路由器 -->
+        <mxCell id="router" value="🧭 智能路由器&#xa;- 意图识别&#xa;- 模式切换&#xa;- 流量分发" style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;strokeWidth=2;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="150" y="380" width="180" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- 同步处理层 -->
+        <mxCell id="sync-layer" value="⚡ 同步层 (实时响应 p95&lt;1.5s)" style="swimlane;fillColor=#d1fae5;strokeColor=#10b981;strokeWidth=2;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="50" y="520" width="700" height="420" as="geometry" />
+        </mxCell>
+        
+        <!-- 快速通道 -->
+        <mxCell id="fast-path" value="🏃 快速通道 (简单对话 &lt;500ms)" style="swimlane;fillColor=#a7f3d0;strokeColor=#059669;fontStyle=1;fontSize=11;" vertex="1" parent="sync-layer">
+          <mxGeometry x="20" y="40" width="200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="e-sensor1" value="👁️ 情感传感器-快速版&#xa;- 基础情绪识别&#xa;- 输出: 情绪标签" style="rounded=1;fillColor=#6ee7b7;" vertex="1" parent="fast-path">
+          <mxGeometry x="10" y="35" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="simple-chat" value="💬 基础对话Agent&#xa;- 小模型(qwen-turbo)&#xa;- 模板缓存" style="rounded=1;fillColor=#6ee7b7;" vertex="1" parent="fast-path">
+          <mxGeometry x="10" y="95" width="180" height="45" as="geometry" />
+        </mxCell>
+        
+        <!-- 智能通道 -->
+        <mxCell id="smart-path" value="🧠 智能通道 (复杂任务 &lt;1.5s)" style="swimlane;fillColor=#a7f3d0;strokeColor=#059669;fontStyle=1;fontSize=11;" vertex="1" parent="sync-layer">
+          <mxGeometry x="240" y="40" width="220" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="e-sensor2" value="👁️ 情感传感器-智能版&#xa;- 深度情绪分析&#xa;- 输出: 多维情绪+策略" style="rounded=1;fillColor=#6ee7b7;" vertex="1" parent="smart-path">
+          <mxGeometry x="10" y="35" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="orchestrator" value="🎯 编排器 (O)&#xa;- 接收情绪策略&#xa;- Planning规划&#xa;- 工具调用编排" style="rounded=1;fillColor=#6ee7b7;" vertex="1" parent="smart-path">
+          <mxGeometry x="10" y="95" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tools" value="🔧 工具库&#xa;- 记忆查询工具&#xa;- 危机检测工具&#xa;- 情绪安抚策略库" style="rounded=1;fillColor=#fed7aa;strokeColor=#ea580c;" vertex="1" parent="smart-path">
+          <mxGeometry x="10" y="165" width="200" height="55" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="memory-fast" value="📦 快速记忆&#xa;(Redis缓存)" style="rounded=1;fillColor=#fed7aa;strokeColor=#ea580c;" vertex="1" parent="sync-layer">
+          <mxGeometry x="480" y="50" width="120" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="e-chat" value="💎 情感对话Agent&#xa;- 人格驱动&#xa;- 情绪自适应&#xa;- 共情回复生成" style="rounded=1;fillColor=#6ee7b7;" vertex="1" parent="sync-layer">
+          <mxGeometry x="480" y="120" width="180" height="65" as="geometry" />
+        </mxCell>
+        
+        <!-- VIP专属Agent -->
+        <mxCell id="vip-agents" value="👑 VIP专属Agent" style="swimlane;fillColor=#fde68a;strokeColor=#f59e0b;fontStyle=1;fontSize=11;" vertex="1" parent="sync-layer">
+          <mxGeometry x="240" y="310" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ec-agent" value="🩺 情感教练Agent&#xa;(基于CBT理论)" style="rounded=1;fillColor=#fcd34d;" vertex="1" parent="vip-agents">
+          <mxGeometry x="10" y="30" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="im-agent" value="💕 亲密模式Agent&#xa;(有安全边界)" style="rounded=1;fillColor=#fcd34d;" vertex="1" parent="vip-agents">
+          <mxGeometry x="115" y="30" width="95" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="critic" value="🔍 评审员 (C)&#xa;- 内容质量检查&#xa;- 上下文一致性&#xa;- 轻量级SLM" style="rounded=1;fillColor=#6ee7b7;" vertex="1" parent="sync-layer">
+          <mxGeometry x="480" y="210" width="180" height="65" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="safety" value="🛡️ 双层安全&#xa;- 敏感词过滤&#xa;- 区域策略&#xa;- 合规检查" style="rounded=1;fillColor=#fca5a5;strokeColor=#b91c1c;strokeWidth=2;" vertex="1" parent="sync-layer">
+          <mxGeometry x="480" y="295" width="180" height="75" as="geometry" />
+        </mxCell>
+        
+        <!-- 异步处理层 -->
+        <mxCell id="async-layer" value="🌙 异步层 (后台智能处理)" style="swimlane;fillColor=#fbcfe8;strokeColor=#ec4899;strokeWidth=2;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="800" y="520" width="350" height="300" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="queue" value="📨 消息队列&#xa;(RabbitMQ/Redis)" style="rounded=1;fillColor=#f9a8d4;" vertex="1" parent="async-layer">
+          <mxGeometry x="20" y="40" width="150" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="async-workers" value="🔬 后台专家团队" style="swimlane;fillColor=#f9a8d4;fontStyle=1;fontSize=11;" vertex="1" parent="async-layer">
+          <mxGeometry x="20" y="110" width="310" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="memory-analyst" value="🧠 记忆分析师&#xa;- 对话总结" style="rounded=1;fillColor=#fbcfe8;" vertex="1" parent="async-workers">
+          <mxGeometry x="10" y="30" width="140" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="reflection-agent" value="🪞 反思Agent&#xa;- 人设一致性" style="rounded=1;fillColor=#fbcfe8;" vertex="1" parent="async-workers">
+          <mxGeometry x="160" y="30" width="140" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="goal-tracker" value="🎯 目标追踪器&#xa;- 进度评估" style="rounded=1;fillColor=#fbcfe8;" vertex="1" parent="async-workers">
+          <mxGeometry x="10" y="75" width="140" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="error-corrector" value="🔧 纠错处理器&#xa;- 记忆修正" style="rounded=1;fillColor=#fbcfe8;" vertex="1" parent="async-workers">
+          <mxGeometry x="160" y="75" width="140" height="35" as="geometry" />
+        </mxCell>
+        
+        <!-- 主动关怀系统 -->
+        <mxCell id="proactive-system" value="⏰ 主动关怀系统" style="swimlane;fillColor=#c4b5fd;strokeColor=#8b5cf6;strokeWidth=2;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="800" y="50" width="350" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="time-trigger" value="⏰ 定时触发&#xa;(早晚问候)" style="rounded=1;fillColor=#ddd6fe;" vertex="1" parent="proactive-system">
+          <mxGeometry x="20" y="40" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="event-trigger" value="🎉 事件触发&#xa;(纪念日/里程碑)" style="rounded=1;fillColor=#ddd6fe;" vertex="1" parent="proactive-system">
+          <mxGeometry x="180" y="40" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="emotion-trigger" value="💔 情绪触发&#xa;(连续未聊天/危机)" style="rounded=1;fillColor=#ddd6fe;" vertex="1" parent="proactive-system">
+          <mxGeometry x="20" y="90" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="goal-trigger" value="📊 目标触发&#xa;(周回顾/月总结)" style="rounded=1;fillColor=#ddd6fe;" vertex="1" parent="proactive-system">
+          <mxGeometry x="180" y="90" width="150" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- 记忆引擎 -->
+        <mxCell id="memory-engine" value="🧠 记忆引擎 (三层架构)" style="swimlane;fillColor=#fed7aa;strokeColor=#ea580c;strokeWidth=2;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="800" y="250" width="350" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="short-memory" value="⚡ 短期记忆 (Redis)&#xa;- 会话上下文&#xa;- 24小时内" style="rounded=1;fillColor=#fdba74;" vertex="1" parent="memory-engine">
+          <mxGeometry x="20" y="40" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="long-memory" value="📚 长期记忆 (pgvector)&#xa;- 事实/偏好&#xa;- RAG检索" style="rounded=1;fillColor=#fdba74;" vertex="1" parent="memory-engine">
+          <mxGeometry x="20" y="90" width="300" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="graph-memory" value="🕸️ 关系图谱 (Neo4j)&#xa;- 人物关系&#xa;- 事件时间线" style="rounded=1;fillColor=#fdba74;" vertex="1" parent="memory-engine">
+          <mxGeometry x="20" y="140" width="300" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- 数据与监控层 -->
+        <mxCell id="data-layer" value="📊 数据与监控层" style="swimlane;fillColor=#e0e7ff;strokeColor:#6366f1;strokeWidth=2;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="520" width="350" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="analytics" value="📈 分析引擎&#xa;- 埋点统计" style="rounded=1;fillColor=#c7d2fe;" vertex="1" parent="data-layer">
+          <mxGeometry x="20" y="40" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="metrics" value="📉 指标监控&#xa;- 响应时间" style="rounded=1;fillColor=#c7d2fe;" vertex="1" parent="data-layer">
+          <mxGeometry x="180" y="40" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="evaluation" value="✅ 评测系统&#xa;- 黄金测试集" style="rounded=1;fillColor=#c7d2fe;" vertex="1" parent="data-layer">
+          <mxGeometry x="100" y="90" width="150" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- 连接线 - 正常流程 -->
+        <mxCell id="conn1" edge="1" source="user-ui" target="gateway" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" value="1. 对话消息" edge="1" source="gateway" target="router" parent="1" style="strokeWidth=2;strokeColor=#0284c7;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 危机路径 (红色虚线) -->
+        <mxCell id="crisis-conn1" edge="1" source="gateway" target="crisis-template" parent="1" style="strokeWidth=3;strokeColor=#dc2626;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="crisis-label" value="🚨检测到危机信号&#xa;(想死/自杀)" style="edgeLabel;html=1;align=center;verticalAlign=middle;fillColor=#fee2e2;strokeColor=#dc2626;fontStyle=1;" vertex="1" parent="crisis-conn1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="crisis-conn2" edge="1" source="crisis-template" target="user-ui" parent="1" style="strokeWidth=3;strokeColor=#dc2626;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="150" />
+              <mxPoint x="130" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="crisis-label2" value="&lt;500ms直接返回" style="edgeLabel;html=1;align=center;verticalAlign=middle;fillColor=#fee2e2;strokeColor=#dc2626;fontStyle=1;" vertex="1" parent="crisis-conn2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 路由分发 -->
+        <mxCell id="conn3" value="3a. 简单闲聊" edge="1" source="router" target="fast-path" parent="1" style="strokeWidth=2;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-10" y="0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn4" value="3b. 复杂任务" edge="1" source="router" target="smart-path" parent="1" style="strokeWidth=2;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="10" y="0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn5" value="3c. VIP功能" edge="1" source="router" target="vip-agents" parent="1" style="strokeWidth=2;strokeColor=#f59e0b;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="470" />
+              <mxPoint x="240" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 快速通道内部 -->
+        <mxCell id="conn6" value="情绪标签" edge="1" source="e-sensor1" target="simple-chat" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 智能通道内部 -->
+        <mxCell id="conn7" value="多维情绪+策略" edge="1" source="e-sensor2" target="orchestrator" parent="1" style="strokeWidth=2;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn8" edge="1" source="orchestrator" target="tools" parent="1" style="strokeWidth=2;strokeColor=#ea580c;endArrow=classic;startArrow=classic;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn9" value="调用工具" style="edgeLabel;html=1;align=center;verticalAlign=middle;" vertex="1" parent="conn8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn10" edge="1" source="orchestrator" target="memory-fast" parent="1" style="endArrow=classic;startArrow=classic;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn11" edge="1" source="memory-fast" target="memory-engine" parent="1" style="endArrow=classic;startArrow=classic;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn12" value="传递情绪+上下文" edge="1" source="orchestrator" target="e-chat" parent="1" style="strokeWidth=2;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 评审流程 -->
+        <mxCell id="conn13" value="快速回复" edge="1" source="simple-chat" target="critic" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="792" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn14" value="情绪自适应回复" edge="1" source="e-chat" target="critic" parent="1" style="strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50" y="0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn15" edge="1" source="vip-agents" target="critic" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="500" y="500" />
+              <mxPoint x="650" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 安全检查 -->
+        <mxCell id="conn16" value="✅ 通过" edge="1" source="critic" target="safety" parent="1" style="strokeWidth=2;strokeColor=#10b981;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn17" value="🔒 最终安全检查" edge="1" source="safety" target="gateway" parent="1" style="strokeWidth=2;strokeColor=#b91c1c;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="833" />
+              <mxPoint x="750" y="480" />
+              <mxPoint x="240" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn18" value="10. 返回回复" edge="1" source="gateway" target="user-ui" parent="1" style="strokeWidth=2;strokeColor=#10b981;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 异步路径 (虚线) -->
+        <mxCell id="async-conn1" value="写入聊天记录" edge="1" source="e-chat" target="queue" parent="1" style="dashed=1;strokeColor=#ec4899;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="725" />
+              <mxPoint x="850" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="async-conn2" edge="1" source="queue" target="memory-analyst" parent="1" style="dashed=1;strokeColor=#ec4899;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="async-conn3" edge="1" source="memory-analyst" target="memory-engine" parent="1" style="dashed=1;strokeColor=#ea580c;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="630" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 主动触发 -->
+        <mxCell id="proactive-conn1" edge="1" source="time-trigger" target="queue" parent="1" style="dashed=1;strokeColor=#8b5cf6;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="890" y="250" />
+              <mxPoint x="890" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 纠错路径 -->
+        <mxCell id="memory-conn" value="X. 记忆纠错" edge="1" source="memory-ui" target="queue" parent="1" style="dashed=1;strokeColor=#f59e0b;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="230" />
+              <mxPoint x="780" y="230" />
+              <mxPoint x="780" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="error-conn" edge="1" source="queue" target="error-corrector" parent="1" style="dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- 监控连接 -->
+        <mxCell id="monitor-conn1" edge="1" source="gateway" target="analytics" parent="1" style="dashed=1;strokeColor=#6366f1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="350" />
+              <mxPoint x="1100" y="350" />
+              <mxPoint x="1100" y="580" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="monitor-conn2" edge="1" source="orchestrator" target="metrics" parent="1" style="dashed=1;strokeColor=#6366f1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1180" y="655" />
+              <mxPoint x="1180" y="580" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- 标题和说明 -->
+        <mxCell id="title" value="AI伴侣Agent完整架构图 V2.0" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="10" width="400" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- 图例 -->
+        <mxCell id="legend" value="图例" style="swimlane;fillColor=#f3f4f6;strokeColor=#6b7280;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="50" width="350" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="legend1" value="实线箭头: 同步调用" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="30" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend2" value="虚线箭头: 异步处理" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="55" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend3" value="红色粗线: 危机特殊路径" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="80" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend4" value="绿色区域: 同步层(实时响应)" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="105" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend5" value="粉色区域: 异步层(后台处理)" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="130" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend6" value="黄色区域: API网关/路由层" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="155" width="220" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- 性能指标标注 -->
+        <mxCell id="perf-note" value="性能目标:&#xa;快速通道 &lt;500ms&#xa;智能通道 &lt;1.5s&#xa;危机响应 &lt;500ms" style="text;html=1;strokeColor=#f59e0b;fillColor=#fef3c7;align=left;verticalAlign=top;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1050" width="150" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- 关键流程标注 -->
+        <mxCell id="key-process" value="关键流程:&#xa;1. 情绪感知→策略建议&#xa;2. 编排器决策工具调用&#xa;3. E_Chat情绪自适应&#xa;4. Critic质量把关&#xa;5. 异步记忆沉淀" style="text;html=1;strokeColor=#10b981;fillColor=#d1fae5;align=left;verticalAlign=top;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="1050" width="200" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- 双向箭头标注 -->
+        <mxCell id="note-bidirectional" value="⟷ 表示读写交互" style="text;html=1;align=center;fontSize=9;fillColor=#fef3c7;" vertex="1" parent="1">
+          <mxGeometry x="670" y="980" width="120" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- 核心Agent标注 -->
+        <mxCell id="agent-note1" value="E_Sensor2是情绪识别+策略建议的核心" style="text;html=1;strokeColor=#059669;fillColor=#d1fae5;align=center;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="50" y="980" width="260" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="agent-note2" value="Orchestrator根据策略决定是否调用工具库" style="text;html=1;align=center;fontSize=9;strokeColor=#059669;fillColor=#d1fae5;" vertex="1" parent="1">
+          <mxGeometry x="340" y="980" width="280" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- 重试机制标注 -->
+        <mxCell id="retry-arrow" edge="1" source="critic" target="orchestrator" parent="1" style="dashed=1;strokeColor=#dc2626;curved=1;startArrow=classic;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="retry-label" value="❌ 驳回重做&#xa;(最多2次)" style="edgeLabel;html=1;align=center;verticalAlign=middle;fillColor=#fee2e2;strokeColor=#dc2626;fontSize=9;fontStyle=1;" vertex="1" parent="retry-arrow">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-50" y="0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
