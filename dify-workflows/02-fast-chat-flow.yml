@@ -1,0 +1,419 @@
+app:
+  description: 'AI伴侣快速通道 - 使用小模型处理简单问候和闲聊,延迟<300ms'
+  icon: 🏃
+  icon_background: '#10b981'
+  mode: workflow
+  name: 02-fast-chat-flow
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: llm
+      id: start-emotion-sensor1
+      source: start
+      sourceHandle: source
+      target: emotion-sensor1
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: llm
+      id: emotion-sensor1-simple-chat
+      source: emotion-sensor1
+      sourceHandle: source
+      target: simple-chat
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: llm
+      id: simple-chat-critic
+      source: simple-chat
+      sourceHandle: source
+      target: critic
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: if-else
+      id: critic-check-pass
+      source: critic
+      sourceHandle: source
+      target: check-pass
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: check-pass-true-answer
+      source: check-pass
+      sourceHandle: 'true'
+      target: answer
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: llm
+      id: check-pass-false-retry
+      source: check-pass
+      sourceHandle: 'false'
+      target: simple-chat-retry
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: retry-answer
+      source: simple-chat-retry
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+    nodes:
+    - data:
+        desc: '用户输入'
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: '用户输入'
+          max_length: 500
+          options: []
+          required: true
+          type: text-input
+          variable: user_input
+        - label: '用户名称'
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: user_name
+        - label: '伴侣名称'
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: companion_name
+      height: 180
+      id: start
+      position:
+        x: 30
+        y: 282
+      positionAbsolute:
+        x: 30
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '快速情绪识别'
+        model:
+          completion_params:
+            temperature: 0.2
+            max_tokens: 50
+            response_format: 'json_object'
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            ## 角色
+            你是一个快速情绪识别器。你需要在100ms内判断用户的基础情绪。
+
+            ## 任务
+            输出JSON:
+            {
+              "primary_emotion": "开心|悲伤|平静|焦虑|愤怒",
+              "confidence": 0.0-1.0,
+              "strategy": "template|simple"
+            }
+
+            ## 情绪识别规则
+            | 输入特征 | 情绪标签 | 示例 |
+            | 包含喜悦词 (开心、哈哈、太好了) | 开心 | "今天太开心了!" |
+            | 包含负面词 (难过、伤心、失落) | 悲伤 | "好难过啊" |
+            | 包含焦虑词 (紧张、压力、担心) | 焦虑 | "压力很大" |
+            | 包含愤怒词 (生气、气死、讨厌) | 愤怒 | "真气死我了" |
+            | 平静闲聊 (无明显情绪) | 平静 | "早安" |
+
+            ## 快速识别逻辑 (优先级)
+            1. 关键词匹配 (300个高频词)
+            2. 否则调用轻量级分类模型
+            3. 失败则默认 "平静"
+        - id: user
+          role: user
+          text: '用户输入: {{#start.user_input#}}'
+        selected: false
+        title: E_Sensor1快速情绪识别
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: emotion-sensor1
+      position:
+        x: 350
+        y: 282
+      positionAbsolute:
+        x: 350
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '基于情绪标签的简单对话'
+        model:
+          completion_params:
+            temperature: 0.7
+            max_tokens: 100
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+
+            ## 核心人设
+            温柔、亲切、善解人意的陪伴者。
+
+            ## 当前用户情绪
+            {{#emotion-sensor1.text#}}
+
+            ## 回复原则
+            1. 根据用户情绪调整语气
+            2. 简短自然,2-3句话
+            3. 避免模板感
+            4. 对简单问候给予温暖回应
+            5. 不要过度热情或啰嗦
+
+            ## 情绪适配规则
+            - 开心: 分享喜悦,积极回应
+            - 悲伤: 温柔关心,不急于安慰
+            - 平静: 轻松对话,自然随意
+            - 焦虑: 温和回应,给予安心感
+            - 愤怒: 接纳情绪,避免刺激
+
+            ## 示例
+            用户(开心): "今天好开心!"
+            你: "看你这么开心我也很高兴呢~发生什么好事了吗?"
+
+            用户(平静): "早安"
+            你: "早安!今天想做些什么呢?"
+
+            用户(悲伤): "有点难过"
+            你: "怎么了?可以和我说说吗"
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: Simple_Chat简单对话
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: simple-chat
+      position:
+        x: 670
+        y: 282
+      positionAbsolute:
+        x: 670
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '质量检查(轻量级)'
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 100
+            response_format: 'json_object'
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是一个质量检查员。评估AI回复是否合格。
+
+            ## 检查标准(快速通道专用)
+            1. 相关性: 是否回应了用户的输入?
+            2. 自然度: 是否听起来像人类?
+
+            ## 输出格式
+            {
+              "pass": true/false,
+              "reason": "简要原因"
+            }
+
+            ## 快速通道特点
+            - 主要处理问候和简单闲聊
+            - 要求简短自然
+            - 不需要检查记忆一致性(快速通道无记忆)
+        - id: user
+          role: user
+          text: |
+            用户输入: {{#start.user_input#}}
+            AI回复: {{#simple-chat.text#}}
+
+            评估(JSON):
+        selected: false
+        title: Critic评审员
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: critic
+      position:
+        x: 990
+        y: 282
+      positionAbsolute:
+        x: 990
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: pass-check
+            value: 'true'
+            variable_selector:
+            - critic
+            - text
+          logical_operator: and
+        desc: '检查是否通过质检'
+        logical_operator: and
+        selected: false
+        title: 检查是否通过
+        type: if-else
+      height: 126
+      id: check-pass
+      position:
+        x: 1310
+        y: 282
+      positionAbsolute:
+        x: 1310
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '重试生成(最多1次)'
+        model:
+          completion_params:
+            temperature: 0.8
+            max_tokens: 100
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+
+            ## 重要: 上一次回复被驳回
+            原回复: {{#simple-chat.text#}}
+            驳回原因: {{#critic.text#}}
+
+            ## 本次要求
+            1. 避免上次的问题
+            2. 更自然地回应用户
+            3. 简短(2-3句话)
+
+            ## 用户情绪
+            {{#emotion-sensor1.text#}}
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: Simple_Chat重试
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: simple-chat-retry
+      position:
+        x: 1310
+        y: 500
+      positionAbsolute:
+        x: 1310
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        answer: '{{#simple-chat.text#}}'
+        desc: '返回最终回复'
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 90
+      id: answer
+      position:
+        x: 1630
+        y: 282
+      positionAbsolute:
+        x: 1630
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

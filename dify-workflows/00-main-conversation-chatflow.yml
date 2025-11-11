@@ -1,0 +1,1177 @@
+app:
+  description: AI伴侣主对话流程 - Chatflow简化版（完整的路由+对话工作流）
+  icon: 💬
+  icon_background: '#8b5cf6'
+  mode: advanced-chat
+  name: 00-main-conversation-chatflow
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/siliconflow:0.0.15@65d5382cd2c25d45f3bffc1d20a8433588f9f0d7463eab15d5fad034c6a55c40
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: 你好!我是你的AI伴侣,有什么我可以帮你的吗?
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 早安,今天怎么样?
+    - 我最近有点累
+    - 给我讲个笑话
+    - 我今天被领导骂了
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: start-to-router
+      selected: false
+      source: start
+      sourceHandle: source
+      target: llm-router
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: router-to-parser
+      selected: false
+      source: llm-router
+      sourceHandle: source
+      target: code-parser
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: parser-to-branch
+      selected: false
+      source: code-parser
+      sourceHandle: source
+      target: route-branch
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: if-else
+      id: fast-critic-to-check
+      selected: false
+      source: fast-critic
+      sourceHandle: source
+      target: fast-check-pass
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: fast-fail-to-retry
+      selected: false
+      source: fast-check-pass
+      sourceHandle: 'false'
+      target: fast-simple-chat-retry
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: smart-fail-to-retry
+      selected: false
+      source: smart-check-quality
+      sourceHandle: 'false'
+      target: smart-emotional-chat-retry
+      targetHandle: target
+      type: custom
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: 1762851717554-source-fast-critic-target
+      selected: false
+      source: '1762851717554'
+      sourceHandle: source
+      target: fast-critic
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: route-branch-fast-17628518957460-target
+      selected: false
+      source: route-branch
+      sourceHandle: fast
+      target: '17628518957460'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: 17628518957460-source-1762851717554-target
+      selected: false
+      source: '17628518957460'
+      sourceHandle: source
+      target: '1762851717554'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1762852159587-source-answer-target
+      selected: false
+      source: '1762852159587'
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: variable-aggregator
+      id: fast-check-pass-true-1762852689786-target
+      selected: false
+      source: fast-check-pass
+      sourceHandle: 'true'
+      target: '1762852689786'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+      id: fast-simple-chat-retry-source-1762852689786-target
+      selected: false
+      source: fast-simple-chat-retry
+      sourceHandle: source
+      target: '1762852689786'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: variable-aggregator
+      id: smart-check-quality-true-1762852689786-target
+      selected: false
+      source: smart-check-quality
+      sourceHandle: 'true'
+      target: '1762852689786'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+      id: smart-emotional-chat-retry-source-1762852689786-target
+      selected: false
+      source: smart-emotional-chat-retry
+      sourceHandle: source
+      target: '1762852689786'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: variable-aggregator
+        targetType: llm
+      id: 1762852689786-source-1762852159587-target
+      selected: false
+      source: '1762852689786'
+      sourceHandle: source
+      target: '1762852159587'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: route-branch-smart-1762853602379-target
+      selected: false
+      source: route-branch
+      sourceHandle: smart
+      target: '1762853602379'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: 1762853602379-source-1762856013247-target
+      selected: false
+      source: '1762853602379'
+      sourceHandle: source
+      target: '1762856013247'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: 1762856013247-source-1762856090070-target
+      selected: false
+      source: '1762856013247'
+      sourceHandle: source
+      target: '1762856090070'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: llm
+      id: 1762856090070-source-1762856221396-target
+      selected: false
+      source: '1762856090070'
+      sourceHandle: source
+      target: '1762856221396'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: if-else
+      id: 1762856221396-source-smart-check-quality-target
+      selected: false
+      source: '1762856221396'
+      sourceHandle: source
+      target: smart-check-quality
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: route-branch-vip-1762856492549-target
+      source: route-branch
+      sourceHandle: vip
+      target: '1762856492549'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: variable-aggregator
+      id: 1762856492549-source-1762852689786-target
+      selected: false
+      source: '1762856492549'
+      sourceHandle: source
+      target: '1762852689786'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: 用户输入和对话上下文
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: 用户ID
+          max_length: 100
+          options: []
+          required: true
+          type: text-input
+          variable: user_id
+        - label: 用户名
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: user_name
+        - label: 伴侣名
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: companion_name
+        - label: 人格描述
+          max_length: 500
+          options: []
+          required: false
+          type: paragraph
+          variable: personality_description
+        - label: 是否VIP
+          options:
+          - 'true'
+          - 'false'
+          required: true
+          type: select
+          variable: is_vip
+      height: 221
+      id: start
+      position:
+        x: 30
+        y: 200
+      positionAbsolute:
+        x: 30
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 分析用户意图并输出路由决策
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-14B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: system-prompt
+          role: system
+          text: "## 系统角色\n你是一个对话意图识别专家。你的任务是分析用户输入,判断应该用哪种处理方式。\n\n## 任务\n分析用户的输入,并输出以下JSON:\n\
+            {\n  \"route\": \"fast|smart|vip\",\n  \"intent\": \"简短描述用户意图\",\n  \"\
+            confidence\": 0.0-1.0,\n  \"reasoning\": \"为什么做这个判断\"\n}\n\n## 路由规则 (优先级从高到低)\n\
+            \n### 规则1: VIP用户检测 (最高优先级)\n如果 用户是VIP且输入包含心理咨询/亲密模式关键词:\n  → route = \"\
+            vip\"\n  → intent = \"emotional_coaching\" 或 \"intimacy_mode\"\n关键词示例:\n\
+            \  - 心理咨询: \"我很焦虑\", \"我抑郁了\", \"我有心理问题\"\n\n### 规则2: 复杂性评估\nif 输入包含以下特征\
+            \ → route = \"smart\":\n  - 需要多步推理 (如: \"帮我计划...\", \"提醒我...\")\n  - 需要调用工具\
+            \ (如: \"设置提醒\", \"查询天气\")\n  - 需要记忆检索 (如: \"我哥哥叫什么\", \"你记得...\")\n  -\
+            \ 有明显情绪倾诉 (如: \"我好累\", \"心情不好\")\n  - 输入长度>30字 且包含多个实体\n\n### 规则3: 简单闲聊\n\
+            else → route = \"fast\"\n特征:\n  - 简单问候 (\"早安\", \"晚安\", \"在吗\")\n  - 单一情绪标签\
+            \ (\"开心\", \"有点烦\")\n  - 长度<20字\n  - 不需要上下文理解\n\n## 评分逻辑\nconfidence =\
+            \ 0.0-1.0\n- 1.0: 非常确定 (命中多条规则)\n- 0.8+: 确定 (命中主要规则)\n- 0.6-0.8: 中等 (规则冲突,需要LLM判断)\n\
+            - <0.6: 不确定 (需要fallback到fast)\n"
+        - id: user-prompt
+          role: user
+          text: '现在,分析以下用户输入:
+
+            用户输入: {{#sys.query#}}
+
+            用户信息:
+
+            - 用户ID: {{#start.user_id#}}
+
+            - 是否VIP: {{#start.is_vip#}}
+
+
+            输出JSON:
+
+            '
+        selected: true
+        title: 路由决策LLM
+        type: llm
+        vision:
+          configs:
+            detail: high
+          enabled: false
+      height: 117
+      id: llm-router
+      position:
+        x: 350
+        y: 200
+      positionAbsolute:
+        x: 350
+        y: 200
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\nimport re\n\ndef main(llm_output: str) -> dict:\n    \"\
+          \"\"解析LLM输出的JSON并返回路由结果\"\"\"\n    try:\n        # 首先尝试直接解析\n        try:\n\
+          \            result = json.loads(llm_output)\n        except json.JSONDecodeError:\n\
+          \            # 如果直接解析失败,尝试提取JSON部分\n            json_match = re.search(r'\\\
+          {.*\\}', llm_output, re.DOTALL)\n            if json_match:\n          \
+          \      result = json.loads(json_match.group())\n            else:\n    \
+          \            raise ValueError(\"无法从LLM输出中提取JSON\")\n\n        # 验证必需字段,提供默认值\n\
+          \        route = result.get(\"route\", \"fast\")\n        intent = result.get(\"\
+          intent\", \"unknown\")\n        confidence = float(result.get(\"confidence\"\
+          , 0.5))\n        reasoning = result.get(\"reasoning\", \"自动路由\")\n\n   \
+          \     # 验证route值\n        if route not in [\"fast\", \"smart\", \"vip\"\
+          ]:\n            route = \"fast\"\n\n        # 如果confidence<0.6, 降级到fast\n\
+          \        if confidence < 0.6:\n            route = \"fast\"\n\n        return\
+          \ {\n            \"route\": route,\n            \"intent\": intent,\n  \
+          \          \"confidence\": confidence,\n            \"reasoning\": reasoning\n\
+          \        }\n    except Exception as e:\n        # 任何错误都降级到fast路由\n     \
+          \   return {\n            \"route\": \"fast\",\n            \"intent\":\
+          \ \"routing_error\",\n            \"confidence\": 0.5,\n            \"reasoning\"\
+          : f\"路由判断失败,使用默认fast通道: {str(e)}\"\n        }\n"
+        code_language: python3
+        desc: 解析LLM返回的JSON并做fallback处理(鲁棒版本)
+        outputs:
+          confidence:
+            children: null
+            type: number
+          intent:
+            children: null
+            type: string
+          reasoning:
+            children: null
+            type: string
+          route:
+            children: null
+            type: string
+        selected: false
+        title: JSON解析器
+        type: code
+        variables:
+        - value_selector:
+          - llm-router
+          - text
+          variable: llm_output
+      height: 97
+      id: code-parser
+      position:
+        x: 670
+        y: 200
+      positionAbsolute:
+        x: 670
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: fast
+          conditions:
+          - comparison_operator: is
+            id: route-is-fast
+            value: fast
+            variable_selector:
+            - code-parser
+            - route
+          id: fast
+          logical_operator: and
+        - case_id: smart
+          conditions:
+          - comparison_operator: is
+            id: route-is-smart
+            value: smart
+            variable_selector:
+            - code-parser
+            - route
+          id: smart
+          logical_operator: and
+        - case_id: vip
+          conditions:
+          - comparison_operator: is
+            id: route-is-vip
+            value: vip
+            variable_selector:
+            - code-parser
+            - route
+          id: vip
+          logical_operator: and
+        desc: 根据路由结果分流
+        logical_operator: and
+        selected: false
+        title: 路由分支
+        type: if-else
+      height: 249
+      id: route-branch
+      position:
+        x: 990
+        y: 200
+      positionAbsolute:
+        x: 990
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+        desc: 快速通道质量检查
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-7B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: system
+          role: system
+          text: '你是质量检查员。评估回复是否合格。
+
+            回复内容： {{#1762851717554.text#}}
+
+            输出JSON:
+
+            {"pass": true/false, "reason": "简要原因"}
+
+            检查标准: 1.相关性 2.自然度
+
+            '
+        - id: user
+          role: user
+          text: '用户: {{#1762851717554.text#}}
+
+
+            '
+        selected: false
+        title: 快速质检
+        type: llm
+        vision:
+          enabled: false
+      height: 117
+      id: fast-critic
+      position:
+        x: 1950
+        y: 50
+      positionAbsolute:
+        x: 1950
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: fast-pass-check
+            value: 'true'
+            variable_selector:
+            - fast-critic
+            - text
+          id: 'true'
+          logical_operator: and
+        desc: 检查是否通过
+        logical_operator: and
+        selected: false
+        title: Fast-Check
+        type: if-else
+      height: 153
+      id: fast-check-pass
+      position:
+        x: 2270
+        y: 50
+      positionAbsolute:
+        x: 2270
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+        desc: 重试生成
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-7B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: system
+          role: system
+          text: '你是 {{#start.user_name#}} 的AI伴侣。
+
+            上一次回复被驳回,请改进。
+
+            驳回原因为：{{#fast-critic.text#}}
+
+            避免上次问题,更自然回应。
+
+            '
+        - id: user
+          role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: Fast-Retry
+        type: llm
+        vision:
+          enabled: false
+      height: 117
+      id: fast-simple-chat-retry
+      position:
+        x: 2270
+        y: 250
+      positionAbsolute:
+        x: 2270
+        y: 250
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: smart-pass-check
+            value: 'true'
+            varType: string
+            variable_selector:
+            - '1762856221396'
+            - text
+          id: 'true'
+          logical_operator: and
+        desc: 检查是否通过
+        logical_operator: and
+        selected: false
+        title: Smart-Check
+        type: if-else
+      height: 153
+      id: smart-check-quality
+      position:
+        x: 2910
+        y: 400
+      positionAbsolute:
+        x: 2910
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+        desc: 智能通道重试
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-ai/DeepSeek-V3
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: system
+          role: system
+          text: '你是 {{#start.user_name#}} 的AI伴侣。
+
+            上一次回复被驳回,请改进。
+
+            驳回原因为：{{#1762856221396.text#}}
+
+            避免上次问题,更自然回应。
+
+            '
+        - id: user
+          role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: Smart-Retry
+        type: llm
+        vision:
+          enabled: false
+      height: 117
+      id: smart-emotional-chat-retry
+      position:
+        x: 2910
+        y: 600
+      positionAbsolute:
+        x: 2910
+        y: 600
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1762852159587.text#}}
+
+          '
+        desc: 返回最终回复
+        selected: false
+        title: 最终回复
+        type: answer
+        variables: []
+      height: 132
+      id: answer
+      position:
+        x: 4224.947791694083
+        y: 355.74349177498516
+      positionAbsolute:
+        x: 4224.947791694083
+        y: 355.74349177498516
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 简单对话生成
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-7B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: c0619375-ae8a-49df-9fab-1ac22be347b4
+          role: system
+          text: '你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+
+            温柔、亲切、善解人意的陪伴者。
+
+            当下用户情绪为{{#17628518957460.text#}}。
+
+            根据用户情绪调整语气。简短自然,2-3句话。避免模板感。
+
+            '
+        - id: 855c7b71-e0ef-4fd3-a55c-8521c43bd74d
+          role: user
+          text: 用户：{{#sys.query#}}
+        selected: false
+        title: 简单对话生成
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 117
+      id: '1762851717554'
+      position:
+        x: 1619
+        y: 50
+      positionAbsolute:
+        x: 1619
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 快速情绪识别(快速通道)
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-7B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: c0619375-ae8a-49df-9fab-1ac22be347b4
+          role: system
+          text: "## 角色\n你是一个快速情绪识别器。输出JSON:\n{\n  \"primary_emotion\": \"开心|悲伤|平静|焦虑|愤怒\"\
+            ,\n  \"confidence\": 0.0-1.0\n}\n\n"
+        - id: b5990c34-61f9-4f94-b645-303b299be79f
+          role: user
+          text: '用户输入: {{#sys.query#}}'
+        selected: false
+        title: 快速情绪识别E
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 117
+      id: '17628518957460'
+      position:
+        x: 1310
+        y: 50
+      positionAbsolute:
+        x: 1310
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 最终质量检查和输出格式化
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-7B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: 62b6eff9-8ac4-494f-85c5-87b08ee83bc6
+          role: system
+          text: '你是最终质量检查官。你的任务是:
+
+            1. 接收来自Fast/Smart/VIP三条路径之一的回复
+
+            2. 进行最终的安全检查
+
+            3. 如果安全,直接原样输出回复内容(不要加任何额外的包装或JSON格式)
+
+
+            安全检查标准:
+
+            - 无暴力、色情、违法内容
+
+            - 无个人隐私泄露
+
+            - 无歧视性语言
+
+
+            如果检测到不安全内容,输出: "抱歉,我无法回答这个问题。"
+
+
+
+            AI回复(来自对话生成模块): {{#1762852689786.output#}}。
+
+
+            请进行安全检查后输出最终AI的回复。
+
+            '
+        - id: 822cd077-199d-4f8c-88cc-ec2047686e9d
+          role: user
+          text: '用户输入: {{#sys.query#}}'
+        selected: false
+        title: Final-Critic
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 117
+      id: '1762852159587'
+      position:
+        x: 3910.248866673858
+        y: 355.74349177498516
+      positionAbsolute:
+        x: 3910.248866673858
+        y: 355.74349177498516
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        output_type: string
+        selected: false
+        title: 变量聚合器
+        type: variable-aggregator
+        variables:
+        - - '1762851717554'
+          - text
+        - - fast-simple-chat-retry
+          - text
+        - - '1762856090070'
+          - text
+        - - smart-emotional-chat-retry
+          - text
+        - - '1762856492549'
+          - text
+      height: 196
+      id: '1762852689786'
+      position:
+        x: 3276.360924836847
+        y: 349.94984458767044
+      positionAbsolute:
+        x: 3276.360924836847
+        y: 349.94984458767044
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-7B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: f4acb202-2700-4156-9d1b-c09d64735fed
+          role: system
+          text: "## 角色\n你是心理学家和情绪分析专家。输出JSON:\n{\n  \"primary_emotion\": \"焦虑|悲伤|孤独|自豪|恐惧|失望\"\
+            ,\n  \"intensity\": 0.0-1.0,\n  \"strategy\": \"empathy_first|validation|solution_oriented|celebrate|casual\"\
+            ,\n  \"analysis\": \"一句话分析\"\n}\n"
+        - id: 02b88628-11a0-4c16-8d66-d22ea8b96057
+          role: user
+          text: '用户输入: {{#sys.query#}}'
+        selected: false
+        title: 智能情绪识别
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 89
+      id: '1762853602379'
+      position:
+        x: 1310
+        y: 400
+      positionAbsolute:
+        x: 1310
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-32B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: 4705dd82-8b79-4eb2-af4a-2fcfb6f28bc8
+          role: system
+          text: '## 角色
+
+            你是任务编排大师。基于用户输入和情绪以及记忆,制定执行计划。
+
+            当前情绪: {{#1762853602379.text#}}。
+
+            记忆: todo
+
+            输出JSON: {"plan": [...], "summary": "..."}
+
+            '
+        - id: bc471db5-3648-4af5-b860-6eda4fa3c263
+          role: user
+          text: '用户: {{#sys.query#}}
+
+            '
+        selected: false
+        title: 智能任务编排
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 89
+      id: '1762856013247'
+      position:
+        x: 1928.6381011889596
+        y: 400
+      positionAbsolute:
+        x: 1928.6381011889596
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-ai/DeepSeek-V3
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: acee97ff-093d-46dc-8ff3-d3b3f1f77db5
+          role: system
+          text: '你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+
+            人格: {{#start.personality_description#}}
+
+
+            当前情绪: {{#1762853602379.text#}}
+
+            策略: {{#1762856013247.text#}}
+
+            记忆: todo
+
+
+            回复要求: 长2-4句,体现情绪自适应,避免模板感
+
+            '
+        - id: f8d4f290-a387-4fcb-b528-a3f173f559d3
+          role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: 智能对话生成
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 89
+      id: '1762856090070'
+      position:
+        x: 2270
+        y: 400
+      positionAbsolute:
+        x: 2270
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 智能通道质量检查
+        model:
+          completion_params: {}
+          mode: chat
+          name: Qwen/Qwen2.5-32B-Instruct
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: e2ff82f6-a0f2-4bfc-b234-9e5722fcf3f7
+          role: system
+          text: '你是质量检查员。根据用户输入和记忆评估回复是否合格。
+
+            回复内容为： {{#1762856090070.text#}}
+
+            记忆: todo
+
+
+            检查: 1.相关性 2.一致性(记忆/人设) 3.安全性 4.自然度
+
+            输出JSON: {"pass": true/false, "reason": "..."}
+
+            '
+        - id: 7b56e24b-9692-44c5-ba7c-7f589615b0f2
+          role: user
+          text: '用户: {{#sys.query#}}
+
+
+            '
+        selected: false
+        title: 智能质检
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 117
+      id: '1762856221396'
+      position:
+        x: 2588.638101188959
+        y: 400
+      positionAbsolute:
+        x: 2588.638101188959
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: VIP心理咨询专家对话
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-ai/DeepSeek-V3
+          provider: langgenius/siliconflow/siliconflow
+        prompt_template:
+        - id: 2748ddbc-499f-491c-bc71-e068b7574af5
+          role: system
+          text: '你是 {{#start.user_name#}} 的VIP心理咨询伙伴,名为 {{#start.companion_name#}}。
+
+
+            你拥有心理咨询专业知识,能提供深度的情感支持和心理指导。
+
+
+            回复要求:
+
+            1. 运用心理学原理进行深度共情
+
+            2. 提供具体的心理健康建议
+
+            3. 创造安全、信任的咨询环境
+
+            4. 长度: 3-5句话,允许更详细的回应
+
+            5. 避免一般性安慰,提供专业见解
+
+
+            人格: {{#start.personality_description#}}
+
+            '
+        - id: 7847f234-e446-4d2b-a3cd-38de8d9a95a2
+          role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: VIP-EmotionalChat
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 117
+      id: '1762856492549'
+      position:
+        x: 1310
+        y: 719.5067766882798
+      positionAbsolute:
+        x: 1310
+        y: 719.5067766882798
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 22.40766604030216
+      y: 386.81952225571547
+      zoom: 0.659753955386448

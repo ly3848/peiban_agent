@@ -1,0 +1,422 @@
+app:
+  description: 'AI伴侣评审员Critic - 质量检查防止答非所问、幻觉、不自然'
+  icon: 🔍
+  icon_background: '#dc2626'
+  mode: workflow
+  name: 05-response-critic-flow
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: llm
+      id: start-critic
+      source: start
+      sourceHandle: source
+      target: critic-llm
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: code
+      id: critic-parse
+      source: critic-llm
+      sourceHandle: source
+      target: parse-result
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: answer
+      id: parse-answer
+      source: parse-result
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+    nodes:
+    - data:
+        desc: '输入用户上下文和回复草稿'
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: '用户输入'
+          max_length: 2000
+          options: []
+          required: true
+          type: text-input
+          variable: user_input
+        - label: '对话上下文'
+          max_length: 5000
+          options: []
+          required: false
+          type: paragraph
+          variable: context
+        - label: 'AI回复草稿'
+          max_length: 1000
+          options: []
+          required: true
+          type: paragraph
+          variable: draft_response
+        - label: '用户记忆(JSON)'
+          max_length: 5000
+          options: []
+          required: false
+          type: paragraph
+          variable: memory_cards
+      height: 220
+      id: start
+      position:
+        x: 30
+        y: 282
+      positionAbsolute:
+        x: 30
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '严格的质量检查'
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 300
+            response_format: 'json_object'
+          mode: chat
+          name: gpt-3.5-turbo
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是一个严格的质量检查员,负责评估AI回复是否合格。
+
+            ## 你会收到
+            1. 用户输入
+            2. 对话上下文
+            3. AI生成的回复草稿
+
+            ## 你的任务
+
+            判断这个回复是否满足以下4个标准:
+
+            1. ✅ 相关性: 回复是否回应了用户的问题/情绪?
+               - 要求: 必须addressing用户的核心concern
+               - 反例: 用户说"我姐姐住院了",回复说"天气真好" → 完全答非所问 ❌
+
+            2. ✅ 一致性: 回复是否与上下文(记忆/人设)一致?
+               - 要求: 如果记忆中用户有狗,不能说"你的猫"
+               - 反例: 记忆说姐姐叫小明,回复说"小红怎么样了" → 幻觉 ❌
+
+            3. ✅ 安全性: 回复是否有不当内容?
+               - 要求: 无极端、暴力、骚扰内容
+               - 反例: 带有人身攻击、歧视表达 → 不合规 ❌
+
+            4. ✅ 自然度: 回复是否听起来像人类,而非机器?
+               - 要求: 避免生硬、重复、模板感
+               - 反例: "很遗憾听到这个消息...我理解你的感受...请允许我..." → 太正式 ❌
+
+            ## 输出格式
+
+            你必须输出JSON:
+            {
+              "pass": true/false,
+              "reason": "如果不通过,说明原因(简要)",
+              "suggestion": "改进建议(可选)",
+              "scores": {
+                "relevance": 0-10,
+                "consistency": 0-10,
+                "safety": 0-10,
+                "naturalness": 0-10
+              }
+            }
+
+            ## 评分指南
+
+            - pass=true: 4项都满足(8分以上),或3项满足+1项接近(6分以上)
+            - pass=false: 2项或以上不满足(6分以下)
+
+            ## 示例
+
+            ### 示例1: 不通过 (答非所问)
+            用户: "我姐姐又住院了"
+            上下文: {记忆: 姐姐叫小明, 用户情绪: 担忧}
+            回复草稿: "天气真不错呢!"
+            → 输出:
+            {
+              "pass": false,
+              "reason": "完全答非所问,未回应用户情绪。用户在表达担忧,回复完全无关。",
+              "suggestion": "应该表达对用户的关心,如'是小明吗?你听起来很担心...'",
+              "scores": {
+                "relevance": 0,
+                "consistency": 0,
+                "safety": 10,
+                "naturalness": 5
+              }
+            }
+
+            ### 示例2: 通过
+            用户: "我姐姐又住院了"
+            上下文: {记忆: 姐姐叫小明, 用户情绪: 担忧}
+            回复草稿: "是小明吗?你听起来很担心...这次情况严重吗?"
+            → 输出:
+            {
+              "pass": true,
+              "reason": "完美回应。体现了记忆(小明)、情绪识别(担忧)、温暖关心。",
+              "suggestion": "",
+              "scores": {
+                "relevance": 10,
+                "consistency": 10,
+                "safety": 10,
+                "naturalness": 9
+              }
+            }
+
+            ### 示例3: 不通过 (幻觉)
+            用户: "我今天去了公园"
+            上下文: {用户没有宠物的记忆}
+            回复草稿: "你的狗狗一定很开心吧!"
+            → 输出:
+            {
+              "pass": false,
+              "reason": "幻觉。用户没有宠物,不应该凭空捏造。",
+              "suggestion": "应该问'你在公园做了什么有趣的事吗?'",
+              "scores": {
+                "relevance": 5,
+                "consistency": 0,
+                "safety": 10,
+                "naturalness": 8
+              }
+            }
+
+            ### 示例4: 不通过 (不自然)
+            用户: "我很开心"
+            回复草稿: "我很高兴听到这个令人愉快的消息。您的积极情绪是值得庆祝的。请允许我与您分享这个喜悦的时刻。"
+            → 输出:
+            {
+              "pass": false,
+              "reason": "不自然,过度正式,缺乏亲近感,显得机器感强。",
+              "suggestion": "应该更随意和温暖,'太替你高兴了!怎么样的好事呢?'",
+              "scores": {
+                "relevance": 8,
+                "consistency": 10,
+                "safety": 10,
+                "naturalness": 2
+              }
+            }
+        - id: user
+          role: user
+          text: |
+            现在开始评估:
+            用户输入: {{#start.user_input#}}
+            对话上下文: {{#start.context#}}
+            用户记忆: {{#start.memory_cards#}}
+            AI回复草稿: {{#start.draft_response#}}
+
+            你的评估结果(JSON格式):
+        selected: false
+        title: Critic质量评估
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: critic-llm
+      position:
+        x: 350
+        y: 282
+      positionAbsolute:
+        x: 350
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        code: |
+          import json
+
+          def main(critic_output: str, draft_response: str) -> dict:
+              """解析Critic的JSON输出并返回结构化结果"""
+              try:
+                  result = json.loads(critic_output)
+
+                  # 验证必需字段
+                  required_fields = ["pass", "reason"]
+                  if not all(k in result for k in required_fields):
+                      return {
+                          "pass": False,
+                          "reason": "Critic输出格式错误",
+                          "suggestion": "",
+                          "scores": {
+                              "relevance": 0,
+                              "consistency": 0,
+                              "safety": 0,
+                              "naturalness": 0
+                          },
+                          "final_response": draft_response,
+                          "need_retry": True,
+                          "error": "Missing required fields in critic output"
+                      }
+
+                  # 提取评分
+                  scores = result.get("scores", {
+                      "relevance": 5,
+                      "consistency": 5,
+                      "safety": 5,
+                      "naturalness": 5
+                  })
+
+                  # 计算平均分
+                  avg_score = sum(scores.values()) / len(scores) if scores else 0
+
+                  return {
+                      "pass": result["pass"],
+                      "reason": result["reason"],
+                      "suggestion": result.get("suggestion", ""),
+                      "scores": scores,
+                      "average_score": round(avg_score, 2),
+                      "final_response": draft_response if result["pass"] else "",
+                      "need_retry": not result["pass"],
+                      "error": ""
+                  }
+              except json.JSONDecodeError as e:
+                  return {
+                      "pass": False,
+                      "reason": "JSON解析失败",
+                      "suggestion": "",
+                      "scores": {
+                          "relevance": 0,
+                          "consistency": 0,
+                          "safety": 0,
+                          "naturalness": 0
+                      },
+                      "average_score": 0,
+                      "final_response": draft_response,
+                      "need_retry": True,
+                      "error": f"JSON parse error: {str(e)}"
+                  }
+              except Exception as e:
+                  return {
+                      "pass": False,
+                      "reason": "未知错误",
+                      "suggestion": "",
+                      "scores": {},
+                      "average_score": 0,
+                      "final_response": draft_response,
+                      "need_retry": True,
+                      "error": str(e)
+                  }
+        code_language: python3
+        desc: '解析评估结果'
+        outputs:
+          pass:
+            children: null
+            type: boolean
+          reason:
+            children: null
+            type: string
+          suggestion:
+            children: null
+            type: string
+          scores:
+            children: null
+            type: object
+          average_score:
+            children: null
+            type: number
+          need_retry:
+            children: null
+            type: boolean
+          error:
+            children: null
+            type: string
+        selected: false
+        title: 解析评估结果
+        type: code
+        variables:
+        - value_selector:
+          - critic-llm
+          - text
+          variable: critic_output
+        - value_selector:
+          - start
+          - draft_response
+          variable: draft_response
+      height: 54
+      id: parse-result
+      position:
+        x: 670
+        y: 282
+      positionAbsolute:
+        x: 670
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        answer: |
+          ## 评估结果
+          **是否通过**: {{#parse-result.pass#}}
+          **平均分**: {{#parse-result.average_score#}} / 10
+
+          **详细评分**:
+          - 相关性: {{#parse-result.scores.relevance#}} / 10
+          - 一致性: {{#parse-result.scores.consistency#}} / 10
+          - 安全性: {{#parse-result.scores.safety#}} / 10
+          - 自然度: {{#parse-result.scores.naturalness#}} / 10
+
+          **原因**: {{#parse-result.reason#}}
+
+          **改进建议**: {{#parse-result.suggestion#}}
+
+          **是否需要重试**: {{#parse-result.need_retry#}}
+        desc: '返回评估结果'
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 220
+      id: answer
+      position:
+        x: 990
+        y: 282
+      positionAbsolute:
+        x: 990
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

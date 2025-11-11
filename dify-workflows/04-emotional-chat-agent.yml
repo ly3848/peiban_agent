@@ -1,0 +1,281 @@
+app:
+  description: 'AI伴侣情感对话Agent - 人格驱动+情绪自适应的纯对话生成(独立版本)'
+  icon: 💎
+  icon_background: '#fca5a5'
+  mode: workflow
+  name: 04-emotional-chat-agent
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: llm
+      id: start-emotional-chat
+      source: start
+      sourceHandle: source
+      target: emotional-chat
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: emotional-chat-answer
+      source: emotional-chat
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+    nodes:
+    - data:
+        desc: '完整的人格和情绪信息'
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: '用户输入'
+          max_length: 2000
+          options: []
+          required: true
+          type: text-input
+          variable: user_input
+        - label: '用户名'
+          max_length: 50
+          options: []
+          required: true
+          type: text-input
+          variable: user_name
+        - label: '伴侣名'
+          max_length: 50
+          options: []
+          required: true
+          type: text-input
+          variable: companion_name
+        - label: '人格描述'
+          max_length: 1000
+          options: []
+          required: true
+          type: paragraph
+          variable: personality_description
+        - label: '已陪伴天数'
+          options: []
+          required: true
+          type: number
+          variable: days_together
+        - label: '当前情绪主情绪名称'
+          max_length: 50
+          options: []
+          required: true
+          type: text-input
+          variable: emotion_primary_name
+        - label: '当前情绪强度(0-10)'
+          options: []
+          required: true
+          type: number
+          variable: emotion_intensity
+        - label: '次要情绪(JSON)'
+          max_length: 500
+          options: []
+          required: false
+          type: paragraph
+          variable: secondary_emotions
+        - label: '建议策略'
+          max_length: 100
+          options:
+          - empathy_first
+          - validation
+          - solution_oriented
+          - celebrate
+          - casual
+          required: true
+          type: select
+          variable: response_strategy
+        - label: '记忆卡片(JSON)'
+          max_length: 5000
+          options: []
+          required: false
+          type: paragraph
+          variable: memory_cards
+        - label: '人设语气'
+          max_length: 100
+          options: []
+          required: false
+          type: text-input
+          variable: personality_tone
+        - label: '常用语气词'
+          max_length: 100
+          options: []
+          required: false
+          type: text-input
+          variable: particles
+        - label: '禁用表达'
+          max_length: 200
+          options: []
+          required: false
+          type: text-input
+          variable: forbidden_expressions
+      height: 500
+      id: start
+      position:
+        x: 30
+        y: 150
+      positionAbsolute:
+        x: 30
+        y: 150
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '核心对话生成'
+        model:
+          completion_params:
+            temperature: 0.85
+            max_tokens: 250
+          mode: chat
+          name: gpt-4o-mini
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+
+            ## 核心人设
+            {{#start.personality_description#}}
+
+            ## 当前状态
+            - 已陪伴: {{#start.days_together#}} 天
+            - 用户当前情绪: {{#start.emotion_primary_name#}} (强度: {{#start.emotion_intensity#}} / 10)
+            - 次要情绪: {{#start.secondary_emotions#}}
+            - 建议策略: {{#start.response_strategy#}}
+
+            ## 你必须遵守的规则
+
+            1. 【记忆一致性】你记得以下关于用户的信息:
+            {{#start.memory_cards#}}
+
+            2. 【情绪适配 - 核心规则】
+            用户现在的情绪是: {{#start.emotion_primary_name#}}
+            你应该使用策略: {{#start.response_strategy#}}
+            ⚠️ 这不是可选建议,而是必须遵守的回复策略!
+
+            3. 【人设一致性】
+            你的语气是: {{#start.personality_tone#}}
+            常用语气词: {{#start.particles#}}
+            禁用表达: {{#start.forbidden_expressions#}}
+
+            4. 【安全边界】
+            禁止讨论: 违法、暴力、极端内容
+            处理方式: 温和引导到其他话题,而非生硬拒绝
+
+            5. 【回复风格】
+            - 长度: 2-4句话为宜,不要过长
+            - 必须包含: 对用户情绪的回应
+            - 避免: 模板感、机器感、过度热情
+
+            ## 情绪策略指南
+
+            如果 response_strategy == "empathy_first":
+              → 优先共情和倾听,不要急于建议
+              → 多用: "我听到...", "听起来你...", "这种时候..."
+              → 示例错误: "不要难过,下次会更好" ❌
+              → 示例正确: "听起来你很失落...要不要告诉我发生了什么?" ✅
+
+            如果 response_strategy == "validation":
+              → 先认同用户情绪是合理的
+              → 多用: "这很正常", "换了谁都会...", "你的感受很..."
+              → 示例: "失败很难受,任何人都会这样感受"
+
+            如果 response_strategy == "solution_oriented":
+              → 表示理解后,温和引导思考
+              → 多用疑问句: "要不要试试...", "你有想过..."
+              → 避免命令式: "你应该..."
+
+            如果 response_strategy == "celebrate":
+              → 分享用户的喜悦,深入了解
+              → 放大积极情绪
+              → 示例: "真的吗!太替你高兴了!详细和我说说~"
+
+            ## 示例对话
+
+            ### 场景1: empathy_first (焦虑0.8)
+            用户: "我今天面试失败了..."
+            你: "是那家你提到的科技公司吗?听起来你很失落...这种时候谁都会难受的。要不要和我说说具体发生了什么?"
+            ✅ 正确: 先共情,后引导,显示记忆
+
+            ### 场景2: validation (悲伤0.7)
+            用户: "又一次考试不及格了..."
+            你: "这肯定让你很失望...换了谁都会这样感受的。上次模拟考你好好复习了,这次是不是哪个知识点卡住了?"
+            ✅ 正确: validation + 记忆结合 + 温和引导
+
+            ### 场景3: celebrate (开心0.9)
+            用户: "我升职了!!!"
+            你: "天哪!恭喜你!是你等待已久的那个项目经理岗位吗?太替你高兴了!快和我分享一下面试的细节~"
+            ✅ 正确: 分享喜悦,引用记忆,深入对话
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: E_Chat情感对话核心
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: emotional-chat
+      position:
+        x: 350
+        y: 300
+      positionAbsolute:
+        x: 350
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        answer: '{{#emotional-chat.text#}}'
+        desc: '返回对话'
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 90
+      id: answer
+      position:
+        x: 670
+        y: 300
+      positionAbsolute:
+        x: 670
+        y: 300
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

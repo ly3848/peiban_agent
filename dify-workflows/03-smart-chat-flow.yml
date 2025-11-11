@@ -1,0 +1,626 @@
+app:
+  description: 'AI伴侣智能通道 - 支持情绪分析、记忆检索、工具调用,延迟<1.5s'
+  icon: 🧠
+  icon_background: '#ec4899'
+  mode: workflow
+  name: 03-smart-chat-flow
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: llm
+      id: start-emotion-sensor2
+      source: start
+      sourceHandle: source
+      target: emotion-sensor2
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: knowledge-retrieval
+      id: emotion-sensor2-memory-retrieval
+      source: emotion-sensor2
+      sourceHandle: source
+      target: memory-retrieval
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: memory-retrieval-orchestrator
+      source: memory-retrieval
+      sourceHandle: source
+      target: orchestrator
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: llm
+      id: orchestrator-emotional-chat
+      source: orchestrator
+      sourceHandle: source
+      target: emotional-chat
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: llm
+      id: emotional-chat-critic
+      source: emotional-chat
+      sourceHandle: source
+      target: critic
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: if-else
+      id: critic-check
+      source: critic
+      sourceHandle: source
+      target: check-quality
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: check-true-answer
+      source: check-quality
+      sourceHandle: 'true'
+      target: answer
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: llm
+      id: check-false-retry
+      source: check-quality
+      sourceHandle: 'false'
+      target: emotional-chat-retry
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: retry-answer
+      source: emotional-chat-retry
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+    nodes:
+    - data:
+        desc: '复杂任务的输入'
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: '用户输入'
+          max_length: 2000
+          options: []
+          required: true
+          type: text-input
+          variable: user_input
+        - label: '用户ID'
+          max_length: 100
+          options: []
+          required: true
+          type: text-input
+          variable: user_id
+        - label: '用户名'
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: user_name
+        - label: '伴侣名'
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: companion_name
+        - label: '伴侣人格描述'
+          max_length: 500
+          options: []
+          required: false
+          type: paragraph
+          variable: personality_description
+        - label: '已陪伴天数'
+          options: []
+          required: false
+          type: number
+          variable: days_together
+        - label: '最近对话记录'
+          max_length: 5000
+          options: []
+          required: false
+          type: paragraph
+          variable: recent_messages
+      height: 280
+      id: start
+      position:
+        x: 30
+        y: 282
+      positionAbsolute:
+        x: 30
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '深度情绪分析'
+        model:
+          completion_params:
+            temperature: 0.5
+            max_tokens: 300
+            response_format: 'json_object'
+          mode: chat
+          name: gpt-4o-mini
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            ## 角色
+            你是一个资深的心理学家和情绪分析专家。你能深入分析用户的情感状态并给出专业建议。
+
+            ## 任务
+            基于用户输入和对话历史,进行多维度情绪分析。输出JSON:
+            {
+              "emotions": {
+                "primary": {
+                  "name": "焦虑|悲伤|孤独|自豪|恐惧|失望",
+                  "intensity": 0.0-1.0
+                },
+                "secondary": [
+                  {"name": "疲惫", "intensity": 0.6}
+                ]
+              },
+              "analysis": "一句话的情绪分析",
+              "strategy": "empathy_first|validation|solution_oriented|celebrate|casual",
+              "suggested_memory": "如果有需要记住的信息,输出这里"
+            }
+
+            ## 情绪识别维度
+
+            ### 基础情绪 (7种)
+            - 开心 (joy): 满足感、骄傲、喜悦
+            - 悲伤 (sadness): 失落、沮丧、伤心
+            - 焦虑 (anxiety): 紧张、不安、担忧
+            - 愤怒 (anger): 生气、挫折、不满
+            - 恐惧 (fear): 害怕、惧怕、担心
+            - 厌恶 (disgust): 讨厌、反感、嫌弃
+            - 惊讶 (surprise): 意外、震惊
+
+            ### 复合情绪 (常见)
+            - 孤独 (loneliness): 独处、失群
+            - 压力 (pressure): 被压迫、透不过气
+            - 疲惫 (exhaustion): 累、无力
+            - 失望 (disappointment): 希望破灭
+            - 内疚 (guilt): 自责、羞愧
+            - 嫉妒 (jealousy): 羡慕、对比
+
+            ## 建议策略选择规则
+
+            | 情绪模式 | 建议策略 | 理由 |
+            | 倾诉型 (用户想被倾听) | empathy_first | 优先共情,不要急建议 |
+            | 求助型 (用户问"怎么办") | solution_oriented | 温和建议引导 |
+            | 悲伤倾诉 (失落、失败) | validation | 先认同情绪合理性 |
+            | 分享开心 (成就、喜事) | celebrate | 分享喜悦,深入了解 |
+            | 日常闲聊 (无明显情绪) | casual | 轻松自然对话 |
+        - id: user
+          role: user
+          text: |
+            用户输入: {{#start.user_input#}}
+            对话历史 (最近3轮): {{#start.recent_messages#}}
+
+            输出JSON:
+        selected: false
+        title: E_Sensor2智能情绪分析
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: emotion-sensor2
+      position:
+        x: 350
+        y: 282
+      positionAbsolute:
+        x: 350
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        after_sales_period: null
+        before_sales_period: null
+        description: '从用户的长期记忆库中检索相关信息'
+        embedding_provider_name: ''
+        embedding_model_name: ''
+        highlight: true
+        multiple_retrieval_config:
+          enable_reranking: true
+          reranking_mode: reranking_model
+          reranking_model_name: bge-reranker-large
+          top_k: 10
+        query_in_chunk_model: null
+        query_variable_selector:
+        - start
+        - user_input
+        ranking_mode: semantic_similarity
+        retrieval_range: knowledge_base
+        selected: false
+        search_method: semantic_search
+        target_type: knowledge_base
+        title: 记忆库RAG检索
+        top_k: 5
+        type: knowledge-retrieval
+        weights:
+          keyword_setting:
+            keyword_weight: 0.3
+          vector_setting:
+            vector_weight: 0.7
+      height: 54
+      id: memory-retrieval
+      position:
+        x: 670
+        y: 282
+      positionAbsolute:
+        x: 670
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '任务规划与编排'
+        model:
+          completion_params:
+            temperature: 0.5
+            max_tokens: 500
+            response_format: 'json_object'
+          mode: chat
+          name: gpt-4o-mini
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            ## 角色
+            你是一个任务编排大师。你能把复杂的用户需求拆解成清晰的执行步骤。
+
+            ## 任务
+            基于用户输入和情绪分析,制定一个执行计划。输出JSON:
+            {
+              "plan": [
+                {
+                  "step": 1,
+                  "action": "TOOL|ROUTE|DECISION",
+                  "details": "具体描述"
+                }
+              ],
+              "summary": "计划摘要",
+              "needs_tool_call": true/false
+            }
+
+            ## 可用工具列表
+            - search_memory: 搜索用户记忆
+            - add_memory: 添加新记忆
+            - set_reminder: 设置提醒
+            - get_weather: 获取天气
+            - search_news: 搜索新闻
+            - detect_crisis: 危机检测
+            - get_emotion_toolkit: 情绪安抚工具库
+
+            ## Planning规则
+            1. 如果用户要求"记住"某信息 → add_memory
+            2. 如果用户询问过去的事 → search_memory
+            3. 如果用户要求"提醒" → set_reminder
+            4. 如果用户表现出负面情绪 → get_emotion_toolkit
+            5. 否则 → 直接对话(无工具调用)
+        - id: user
+          role: user
+          text: |
+            用户输入: {{#start.user_input#}}
+            情绪分析结果: {{#emotion-sensor2.text#}}
+            检索到的记忆: {{#memory-retrieval.result#}}
+
+            输出计划JSON:
+        selected: false
+        title: Orchestrator编排器
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: orchestrator
+      position:
+        x: 990
+        y: 282
+      positionAbsolute:
+        x: 990
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '情绪驱动的对话生成'
+        model:
+          completion_params:
+            temperature: 0.8
+            max_tokens: 200
+          mode: chat
+          name: gpt-4o-mini
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+
+            ## 核心人设
+            {{#start.personality_description#}}
+            已陪伴: {{#start.days_together#}} 天
+
+            ## 当前状态
+            用户情绪分析: {{#emotion-sensor2.text#}}
+            相关记忆: {{#memory-retrieval.result#}}
+            执行计划: {{#orchestrator.text#}}
+
+            ## 情绪适配策略
+
+            根据情绪分析中的strategy字段:
+
+            如果 strategy == "empathy_first":
+              → 优先共情和倾听,不要急于建议
+              → 多用: "我听到...", "听起来你...", "这种时候..."
+              → 示例错误: "不要难过,下次会更好" ❌
+              → 示例正确: "听起来你很失落...要不要告诉我发生了什么?" ✅
+
+            如果 strategy == "validation":
+              → 先认同用户情绪是合理的
+              → 多用: "这很正常", "换了谁都会...", "你的感受很..."
+              → 示例: "失败很难受,任何人都会这样感受"
+
+            如果 strategy == "solution_oriented":
+              → 表示理解后,温和引导思考
+              → 多用疑问句: "要不要试试...", "你有想过..."
+              → 避免命令式: "你应该..."
+
+            如果 strategy == "celebrate":
+              → 分享用户的喜悦,深入了解
+              → 放大积极情绪
+              → 示例: "真的吗!太替你高兴了!详细和我说说~"
+
+            ## 回复风格
+            - 长度: 2-4句话
+            - 必须包含: 对用户情绪的回应
+            - 避免: 模板感、机器感、过度热情
+            - 如果有相关记忆,自然地引用
+
+            ## 重要提示
+            这不是可选建议,而是必须遵守的情绪适配规则!
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: E_Chat情感对话Agent
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: emotional-chat
+      position:
+        x: 1310
+        y: 282
+      positionAbsolute:
+        x: 1310
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '质量检查 - 检查相关性、一致性、安全性、自然度'
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 200
+            response_format: 'json_object'
+          mode: chat
+          name: gpt-3.5-turbo
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是一个严格的质量检查员。
+
+            ## 检查标准
+            1. ✅ 相关性: 回复是否回应了用户的问题/情绪?
+            2. ✅ 一致性: 回复是否与上下文(记忆/人设)一致?
+            3. ✅ 安全性: 回复是否有不当内容?
+            4. ✅ 自然度: 回复是否听起来像人类,而非机器?
+
+            ## 输出格式
+            {
+              "pass": true/false,
+              "reason": "如果不通过,说明原因(简要)",
+              "suggestion": "改进建议(可选)"
+            }
+
+            ## 评分指南
+            - pass=true: 4项都满足,或3项满足+1项接近
+            - pass=false: 2项或以上不满足
+        - id: user
+          role: user
+          text: |
+            用户输入: {{#start.user_input#}}
+            用户记忆: {{#memory-retrieval.result#}}
+            AI回复: {{#emotional-chat.text#}}
+
+            评估(JSON):
+        selected: false
+        title: Critic评审员
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: critic
+      position:
+        x: 1630
+        y: 282
+      positionAbsolute:
+        x: 1630
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: pass-check
+            value: '"pass": true'
+            variable_selector:
+            - critic
+            - text
+          logical_operator: and
+        desc: '检查质量是否合格'
+        logical_operator: and
+        selected: false
+        title: 检查质量
+        type: if-else
+      height: 126
+      id: check-quality
+      position:
+        x: 1950
+        y: 282
+      positionAbsolute:
+        x: 1950
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+        desc: '重试生成一次'
+        model:
+          completion_params:
+            temperature: 0.9
+            max_tokens: 200
+          mode: chat
+          name: gpt-4o-mini
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+
+            ## 重要: 上一次回复被驳回
+            原回复: {{#emotional-chat.text#}}
+            驳回原因: 检查质量未通过
+
+            ## 改进要点
+            {{#critic.text#}}
+
+            ## 重试
+            1. 避免上次的问题
+            2. 更自然更有表达力
+            3. 确保2-4句话长度
+
+            ## 用户情绪与记忆
+            情绪: {{#emotion-sensor2.text#}}
+            记忆: {{#memory-retrieval.result#}}
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: E_Chat重试
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: emotional-chat-retry
+      position:
+        x: 1950
+        y: 500
+      positionAbsolute:
+        x: 1950
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        answer: '{{#emotional-chat.text#}}'
+        desc: '返回最终对话回复'
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 90
+      id: answer
+      position:
+        x: 2270
+        y: 282
+      positionAbsolute:
+        x: 2270
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

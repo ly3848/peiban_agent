@@ -1,0 +1,230 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="companion-simple-arch" name="陪伴Agent简易架构图">
+    <mxGraphModel dx="1426" dy="774" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- 用户输入 -->
+        <mxCell id="user-input" value="👤 用户输入" style="rounded=1;fillColor=#e0f2fe;strokeColor=#0284c7;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="200" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- 路由决策 -->
+        <mxCell id="router" value="🧭 路由决策LLM&#xa;- 分析用户意图&#xa;- 输出JSON路由" style="rounded=1;fillColor=#ddd6fe;strokeColor=#7c3aed;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="200" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- JSON解析 -->
+        <mxCell id="parser" value="⚙️ JSON解析器&#xa;- 提取route字段&#xa;- fallback处理" style="rounded=1;fillColor=#fed7aa;strokeColor=#ea580c;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="410" y="200" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- 路由分支 -->
+        <mxCell id="branch" value="🔀 路由分支&#xa;- fast | smart | vip" style="rhombus;fillColor=#f3f4f6;strokeColor=#6b7280;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="200" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- 快速通道 - 情绪识别 -->
+        <mxCell id="fast-emotion" value="👁️ 快速情绪识别&#xa;(qwen-turbo)" style="rounded=1;fillColor=#a7f3d0;strokeColor=#059669;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="800" y="100" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 快速通道 - 简单对话 -->
+        <mxCell id="fast-chat" value="💬 简单对话生成&#xa;(qwen-7b)" style="rounded=1;fillColor=#a7f3d0;strokeColor=#059669;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="100" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 快速通道 - 质量检查 -->
+        <mxCell id="fast-critic" value="✅ 快速质检&#xa;(qwen-7b)" style="rounded=1;fillColor=#fef3c7;strokeColor=#f59e0b;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="100" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 智能通道 - 情绪分析 -->
+        <mxCell id="smart-emotion" value="👁️ 智能情绪分析&#xa;(qwen-7b)" style="rounded=1;fillColor=#a7f3d0;strokeColor=#059669;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="800" y="200" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 智能通道 - 任务编排 -->
+        <mxCell id="smart-orchestrator" value="🎯 任务编排大师&#xa;(qwen-32b)" style="rounded=1;fillColor=#a7f3d0;strokeColor=#059669;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="200" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 智能通道 - 智能对话 -->
+        <mxCell id="smart-chat" value="🧠 智能对话生成&#xa;(deepseek-v3)" style="rounded=1;fillColor=#a7f3d0;strokeColor=#059669;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="200" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 智能通道 - 质量检查 -->
+        <mxCell id="smart-critic" value="✅ 智能质检&#xa;(qwen-32b)" style="rounded=1;fillColor=#fef3c7;strokeColor=#f59e0b;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- VIP通道 - 心理咨询 -->
+        <mxCell id="vip-chat" value="👑 VIP心理咨询&#xa;(deepseek-v3)" style="rounded=1;fillColor=#fde68a;strokeColor=#f59e0b;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="300" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 变量聚合器 -->
+        <mxCell id="aggregator" value="📦 变量聚合器&#xa;- 收集各路径输出" style="rounded=1;fillColor=#f3f4f6;strokeColor=#6b7280;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1600" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 最终质量检查 -->
+        <mxCell id="final-critic" value="🔍 最终安全检查&#xa;(qwen-7b)" style="rounded=1;fillColor=#fca5a5;strokeColor=#b91c1c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1800" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 最终回复 -->
+        <mxCell id="answer" value="💭 最终回复&#xa;给用户" style="rounded=1;fillColor=#d1fae5;strokeColor=#10b981;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="200" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- 连接线 -->
+        <!-- 主流程 -->
+        <mxCell id="flow1" edge="1" source="user-input" target="router" parent="1" style="strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flow2" edge="1" source="router" target="parser" parent="1" style="strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flow3" edge="1" source="parser" target="branch" parent="1" style="strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 快速通道流程 -->
+        <mxCell id="fast1" edge="1" source="branch" target="fast-emotion" parent="1" style="strokeWidth=2;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="230" />
+              <mxPoint x="720" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fast-label" value="Fast路径" style="edgeLabel;html=1;fontSize=10;" vertex="1" parent="fast1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fast2" edge="1" source="fast-emotion" target="fast-chat" parent="1" style="strokeWidth=2;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fast3" edge="1" source="fast-chat" target="fast-critic" parent="1" style="strokeWidth=2;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 智能通道流程 -->
+        <mxCell id="smart1" edge="1" source="branch" target="smart-emotion" parent="1" style="strokeWidth=2;strokeColor=#7c3aed;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="smart-label" value="Smart路径" style="edgeLabel;html=1;fontSize=10;" vertex="1" parent="smart1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="smart2" edge="1" source="smart-emotion" target="smart-orchestrator" parent="1" style="strokeWidth=2;strokeColor=#7c3aed;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="smart3" edge="1" source="smart-orchestrator" target="smart-chat" parent="1" style="strokeWidth=2;strokeColor=#7c3aed;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="smart4" edge="1" source="smart-chat" target="smart-critic" parent="1" style="strokeWidth=2;strokeColor=#7c3aed;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- VIP通道流程 -->
+        <mxCell id="vip1" edge="1" source="branch" target="vip-chat" parent="1" style="strokeWidth=2;strokeColor=#f59e0b;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="300" />
+              <mxPoint x="930" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vip-label" value="VIP路径" style="edgeLabel;html=1;fontSize=10;" vertex="1" parent="vip1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 聚合和最终流程 -->
+        <mxCell id="agg1" edge="1" source="fast-critic" target="aggregator" parent="1" style="dashed=1;strokeColor=#059669;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="125" />
+              <mxPoint x="1660" y="125" />
+              <mxPoint x="1660" y="225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="agg2" edge="1" source="smart-critic" target="aggregator" parent="1" style="dashed=1;strokeColor=#7c3aed;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="agg3" edge="1" source="vip-chat" target="aggregator" parent="1" style="dashed=1;strokeColor=#f59e0b;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1140" y="325" />
+              <mxPoint x="1660" y="325" />
+              <mxPoint x="1660" y="225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 重试机制 -->
+        <mxCell id="retry-fast" edge="1" source="fast-critic" target="fast-chat" parent="1" style="dashed=1;strokeColor=#dc2626;curved=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1260" y="80" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="retry-fast-label" value="❌ 不通过&#xa;重试" style="edgeLabel;html=1;fontSize=8;" vertex="1" parent="retry-fast">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="retry-smart" edge="1" source="smart-critic" target="smart-chat" parent="1" style="dashed=1;strokeColor=#dc2626;curved=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1460" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="retry-smart-label" value="❌ 不通过&#xa;重试" style="edgeLabel;html=1;fontSize=8;" vertex="1" parent="retry-smart">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="final-flow1" edge="1" source="aggregator" target="final-critic" parent="1" style="strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="final-flow2" edge="1" source="final-critic" target="answer" parent="1" style="strokeWidth=2;strokeColor=#10b981;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 标题 -->
+        <mxCell id="title" value="AI伴侣Agent简易架构图 V1.0" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="20" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- 图例 -->
+        <mxCell id="legend" value="图例" style="swimlane;fillColor=#f3f4f6;strokeColor=#6b7280;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1800" y="50" width="300" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="legend1" value="🟢 实线箭头: 同步流程" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="25" width="150" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="legend2" value="🟡 虚线箭头: 聚合/重试" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="45" width="150" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="legend3" value="🔵 Fast路径: 简单对话" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="65" width="150" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="legend4" value="🟣 Smart路径: 复杂任务" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="85" width="150" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="legend5" value="🟠 VIP路径: 专业咨询" style="text;html=1;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="105" width="150" height="15" as="geometry" />
+        </mxCell>
+
+        <!-- 性能指标 -->
+        <mxCell id="perf" value="关键指标&#xa;• Fast: &lt;500ms&#xa;• Smart: &lt;1.5s&#xa;• VIP: &lt;2s" style="text;html=1;strokeColor=#059669;fillColor=#d1fae5;align=left;verticalAlign=top;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="150" height="80" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

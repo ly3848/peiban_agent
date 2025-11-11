@@ -1,0 +1,346 @@
+app:
+  description: 'AI伴侣智能路由器 - 根据用户输入判断应该使用哪种处理通道(快速/智能/VIP)'
+  icon: 🧭
+  icon_background: '#7c3aed'
+  mode: workflow
+  name: 01-conversation-router
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: start-llm-router
+      source: start
+      sourceHandle: source
+      target: llm-router
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: llm-router-code-parser
+      source: llm-router
+      sourceHandle: source
+      target: code-parser
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: answer
+      id: code-parser-answer
+      source: code-parser
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+    nodes:
+    - data:
+        desc: '用户输入和上下文信息'
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: '用户输入'
+          max_length: 2000
+          options: []
+          required: true
+          type: text-input
+          variable: user_input
+        - label: '用户ID'
+          max_length: 100
+          options: []
+          required: true
+          type: text-input
+          variable: user_id
+        - label: '是否VIP'
+          options:
+          - 'true'
+          - 'false'
+          required: true
+          type: select
+          variable: is_vip
+        - label: '对话历史(JSON)'
+          max_length: 10000
+          options: []
+          required: false
+          type: paragraph
+          variable: conversation_history
+      height: 220
+      id: start
+      position:
+        x: 30
+        y: 282
+      positionAbsolute:
+        x: 30
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: '分析用户意图并输出路由决策'
+        model:
+          completion_params:
+            temperature: 0.3
+            max_tokens: 500
+            response_format: 'json_object'
+          mode: chat
+          name: deepseek-chat
+          provider: deepseek
+        prompt_template:
+        - id: system-prompt
+          role: system
+          text: |
+            ## 系统角色
+            你是一个对话意图识别专家。你的任务是分析用户输入,判断应该用哪种处理方式。
+
+            ## 任务
+            分析用户的输入,并输出以下JSON:
+            {
+              "route": "fast|smart|vip",
+              "intent": "简短描述用户意图",
+              "confidence": 0.0-1.0,
+              "reasoning": "为什么做这个判断"
+            }
+
+            ## 路由规则 (优先级从高到低)
+
+            ### 规则1: VIP用户检测 (最高优先级)
+            如果 用户是VIP且输入包含心理咨询/亲密模式关键词:
+              → route = "vip"
+              → intent = "emotional_coaching" 或 "intimacy_mode"
+            关键词示例:
+              - 心理咨询: "我很焦虑", "我抑郁了", "我有心理问题"
+              - 亲密模式: [需在VIP Agent中定义]
+
+            ### 规则2: 复杂性评估
+            if 输入包含以下特征 → route = "smart":
+              - 需要多步推理 (如: "帮我计划...", "提醒我...")
+              - 需要调用工具 (如: "设置提醒", "查询天气")
+              - 需要记忆检索 (如: "我哥哥叫什么", "你记得...")
+              - 有明显情绪倾诉 (如: "我好累", "心情不好")
+              - 输入长度>30字 且包含多个实体
+
+            ### 规则3: 简单闲聊
+            else → route = "fast"
+            特征:
+              - 简单问候 ("早安", "晚安", "在吗")
+              - 单一情绪标签 ("开心", "有点烦")
+              - 长度<20字
+              - 不需要上下文理解
+
+            ## 评分逻辑
+            confidence = 0.0-1.0
+            - 1.0: 非常确定 (命中多条规则)
+            - 0.8+: 确定 (命中主要规则)
+            - 0.6-0.8: 中等 (规则冲突,需要LLM判断)
+            - <0.6: 不确定 (需要fallback到fast)
+
+            ## 示例
+
+            ### 例子1: 简单问候
+            用户: "早安"
+            输出:
+            {
+              "route": "fast",
+              "intent": "greeting",
+              "confidence": 0.95,
+              "reasoning": "简单问候,无需复杂处理"
+            }
+
+            ### 例子2: 情绪倾诉
+            用户: "我最近工作压力很大,睡眠质量也下降了,你说我应该怎么办?"
+            输出:
+            {
+              "route": "smart",
+              "intent": "emotional_support_with_advice",
+              "confidence": 0.9,
+              "reasoning": "包含情绪倾诉(压力大)和求助(怎么办),需要共情+建议,属复杂任务"
+            }
+
+            ### 例子3: 记忆查询
+            用户: "我那个在医院工作的朋友叫什么名字来着?"
+            输出:
+            {
+              "route": "smart",
+              "intent": "memory_retrieval",
+              "confidence": 0.85,
+              "reasoning": "需要调用记忆库查询,属于smart范畴"
+            }
+
+            ### 例子4: VIP心理咨询
+            用户: "我最近有点抑郁,总是没有精力..."
+            输出:
+            {
+              "route": "vip",
+              "intent": "emotional_coaching",
+              "confidence": 0.8,
+              "reasoning": "用户是VIP,输入包含心理相关词汇(抑郁),应路由到情感教练"
+            }
+        - id: user-prompt
+          role: user
+          text: |
+            现在,分析以下用户输入:
+            用户输入: {{#start.user_input#}}
+            用户信息:
+            - 用户ID: {{#start.user_id#}}
+            - 是否VIP: {{#start.is_vip#}}
+            - 对话历史: {{#start.conversation_history#}}
+
+            输出JSON:
+        selected: false
+        title: 路由决策LLM
+        type: llm
+        vision:
+          configs:
+            detail: high
+          enabled: false
+      height: 98
+      id: llm-router
+      position:
+        x: 350
+        y: 282
+      positionAbsolute:
+        x: 350
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        code: |
+          import json
+
+          def main(llm_output: str) -> dict:
+              """解析LLM输出的JSON并返回路由结果"""
+              try:
+                  result = json.loads(llm_output)
+
+                  # 验证必需字段
+                  if not all(k in result for k in ["route", "intent", "confidence", "reasoning"]):
+                      return {
+                          "route": "fast",
+                          "intent": "error",
+                          "confidence": 0.5,
+                          "reasoning": "解析失败,使用默认fast路由",
+                          "error": "Missing required fields"
+                      }
+
+                  # 验证route值
+                  if result["route"] not in ["fast", "smart", "vip"]:
+                      result["route"] = "fast"
+                      result["reasoning"] += " (invalid route, fallback to fast)"
+
+                  # 如果confidence<0.6, 降级到fast
+                  if result["confidence"] < 0.6:
+                      result["route"] = "fast"
+                      result["reasoning"] += " (low confidence, fallback to fast)"
+
+                  return {
+                      "route": result["route"],
+                      "intent": result["intent"],
+                      "confidence": result["confidence"],
+                      "reasoning": result["reasoning"]
+                  }
+              except Exception as e:
+                  return {
+                      "route": "fast",
+                      "intent": "error",
+                      "confidence": 0.5,
+                      "reasoning": "JSON解析失败,使用默认fast路由",
+                      "error": str(e)
+                  }
+        code_language: python3
+        desc: '解析LLM返回的JSON并做fallback处理'
+        outputs:
+          route:
+            children: null
+            type: string
+          intent:
+            children: null
+            type: string
+          confidence:
+            children: null
+            type: number
+          reasoning:
+            children: null
+            type: string
+        selected: false
+        title: JSON解析器
+        type: code
+        variables:
+        - value_selector:
+          - llm-router
+          - text
+          variable: llm_output
+      height: 54
+      id: code-parser
+      position:
+        x: 670
+        y: 282
+      positionAbsolute:
+        x: 670
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    - data:
+        answer: |
+          路由结果:
+          - 路由通道: {{#code-parser.route#}}
+          - 用户意图: {{#code-parser.intent#}}
+          - 置信度: {{#code-parser.confidence#}}
+          - 判断理由: {{#code-parser.reasoning#}}
+        desc: '返回路由决策结果'
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 143
+      id: answer
+      position:
+        x: 990
+        y: 282
+      positionAbsolute:
+        x: 990
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244

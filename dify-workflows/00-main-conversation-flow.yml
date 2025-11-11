@@ -1,0 +1,1251 @@
+app:
+  description: 'AI伴侣主对话流程 - 完整的路由+对话+质检工作流(集成5个模块)'
+  icon: 🚀
+  icon_background: '#8b5cf6'
+  mode: workflow
+  name: 00-main-conversation-flow
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: '你好!我是你的AI伴侣,有什么我可以帮你的吗?'
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+      - '早安,今天怎么样?'
+      - '我最近有点累'
+      - '给我讲个笑话'
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    # Start → Router
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: start-to-router
+      source: start
+      sourceHandle: source
+      target: llm-router
+      targetHandle: target
+      type: custom
+
+    # Router → Parser
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: router-to-parser
+      source: llm-router
+      sourceHandle: source
+      target: code-parser
+      targetHandle: target
+      type: custom
+
+    # Parser → Route Branch
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: parser-to-branch
+      source: code-parser
+      sourceHandle: source
+      target: route-branch
+      targetHandle: target
+      type: custom
+
+    # Fast Route: Router → E_Sensor1
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: route-fast-to-sensor1
+      source: route-branch
+      sourceHandle: fast
+      target: fast-emotion-sensor1
+      targetHandle: target
+      type: custom
+
+    # Fast Route: E_Sensor1 → Simple Chat
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: llm
+      id: fast-sensor1-to-chat
+      source: fast-emotion-sensor1
+      sourceHandle: source
+      target: fast-simple-chat
+      targetHandle: target
+      type: custom
+
+    # Fast Route: Simple Chat → Fast Critic
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: llm
+      id: fast-chat-to-critic
+      source: fast-simple-chat
+      sourceHandle: source
+      target: fast-critic
+      targetHandle: target
+      type: custom
+
+    # Fast Route: Fast Critic → Check Pass
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: if-else
+      id: fast-critic-to-check
+      source: fast-critic
+      sourceHandle: source
+      target: fast-check-pass
+      targetHandle: target
+      type: custom
+
+    # Fast Route: Pass → Merge Response
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: code
+      id: fast-pass-to-merge
+      source: fast-check-pass
+      sourceHandle: 'true'
+      target: merge-response
+      targetHandle: target
+      type: custom
+
+    # Fast Route: Retry → Merge Response
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: fast-retry-to-merge
+      source: fast-simple-chat-retry
+      sourceHandle: source
+      target: merge-response
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Pass → Merge Response
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: code
+      id: smart-pass-to-merge
+      source: smart-check-quality
+      sourceHandle: 'true'
+      target: merge-response
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Retry → Merge Response
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: smart-retry-to-merge
+      source: smart-emotional-chat-retry
+      sourceHandle: source
+      target: merge-response
+      targetHandle: target
+      type: custom
+
+    # VIP Route: VIP Chat → Merge Response
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: vip-chat-to-merge
+      source: vip-emotional-chat
+      sourceHandle: source
+      target: merge-response
+      targetHandle: target
+      type: custom
+
+    # Merge Response → Final Critic
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: llm
+      id: merge-to-final-critic
+      source: merge-response
+      sourceHandle: source
+      target: final-critic
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Router → E_Sensor2
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: route-smart-to-sensor2
+      source: route-branch
+      sourceHandle: smart
+      target: smart-emotion-sensor2
+      targetHandle: target
+      type: custom
+
+    # Smart Route: E_Sensor2 → Memory Retrieval
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: knowledge-retrieval
+      id: smart-sensor2-to-memory
+      source: smart-emotion-sensor2
+      sourceHandle: source
+      target: smart-memory-retrieval
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Memory → Orchestrator
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: smart-memory-to-orchestrator
+      source: smart-memory-retrieval
+      sourceHandle: source
+      target: smart-orchestrator
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Orchestrator → Emotional Chat
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: llm
+      id: smart-orchestrator-to-chat
+      source: smart-orchestrator
+      sourceHandle: source
+      target: smart-emotional-chat
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Emotional Chat → Smart Critic
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: llm
+      id: smart-chat-to-critic
+      source: smart-emotional-chat
+      sourceHandle: source
+      target: smart-critic
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Smart Critic → Check Pass
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: if-else
+      id: smart-critic-to-check
+      source: smart-critic
+      sourceHandle: source
+      target: smart-check-quality
+      targetHandle: target
+      type: custom
+
+    # Fast Route: Fail → Retry
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: fast-fail-to-retry
+      source: fast-check-pass
+      sourceHandle: 'false'
+      target: fast-simple-chat-retry
+      targetHandle: target
+      type: custom
+
+    # Smart Route: Fail → Retry
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: smart-fail-to-retry
+      source: smart-check-quality
+      sourceHandle: 'false'
+      target: smart-emotional-chat-retry
+      targetHandle: target
+      type: custom
+
+    # VIP Route: Router → VIP Chat
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: route-vip-to-chat
+      source: route-branch
+      sourceHandle: vip
+      target: vip-emotional-chat
+      targetHandle: target
+      type: custom
+
+    # Final Critic → Answer
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: final-critic-to-answer
+      source: final-critic
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+
+    nodes:
+    # START NODE
+    - data:
+        desc: '用户输入和对话上下文'
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: '用户输入'
+          max_length: 2000
+          options: []
+          required: true
+          type: text-input
+          variable: user_input
+        - label: '用户ID'
+          max_length: 100
+          options: []
+          required: true
+          type: text-input
+          variable: user_id
+        - label: '用户名'
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: user_name
+        - label: '伴侣名'
+          max_length: 50
+          options: []
+          required: false
+          type: text-input
+          variable: companion_name
+        - label: '人格描述'
+          max_length: 500
+          options: []
+          required: false
+          type: paragraph
+          variable: personality_description
+        - label: '是否VIP'
+          options:
+          - 'true'
+          - 'false'
+          required: true
+          type: select
+          variable: is_vip
+        - label: '对话历史(JSON)'
+          max_length: 5000
+          options: []
+          required: false
+          type: paragraph
+          variable: conversation_history
+      height: 280
+      id: start
+      position:
+        x: 30
+        y: 200
+      positionAbsolute:
+        x: 30
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # ROUTER NODE
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: '分析用户意图并输出路由决策'
+        model:
+          completion_params:
+            temperature: 0.3
+            max_tokens: 500
+            response_format: 'json_object'
+          mode: chat
+          name: deepseek-chat
+          provider: deepseek
+        prompt_template:
+        - id: system-prompt
+          role: system
+          text: |
+            ## 系统角色
+            你是一个对话意图识别专家。你的任务是分析用户输入,判断应该用哪种处理方式。
+
+            ## 任务
+            分析用户的输入,并输出以下JSON:
+            {
+              "route": "fast|smart|vip",
+              "intent": "简短描述用户意图",
+              "confidence": 0.0-1.0,
+              "reasoning": "为什么做这个判断"
+            }
+
+            ## 路由规则 (优先级从高到低)
+
+            ### 规则1: VIP用户检测 (最高优先级)
+            如果 用户是VIP且输入包含心理咨询/亲密模式关键词:
+              → route = "vip"
+              → intent = "emotional_coaching" 或 "intimacy_mode"
+            关键词示例:
+              - 心理咨询: "我很焦虑", "我抑郁了", "我有心理问题"
+
+            ### 规则2: 复杂性评估
+            if 输入包含以下特征 → route = "smart":
+              - 需要多步推理 (如: "帮我计划...", "提醒我...")
+              - 需要调用工具 (如: "设置提醒", "查询天气")
+              - 需要记忆检索 (如: "我哥哥叫什么", "你记得...")
+              - 有明显情绪倾诉 (如: "我好累", "心情不好")
+              - 输入长度>30字 且包含多个实体
+
+            ### 规则3: 简单闲聊
+            else → route = "fast"
+            特征:
+              - 简单问候 ("早安", "晚安", "在吗")
+              - 单一情绪标签 ("开心", "有点烦")
+              - 长度<20字
+              - 不需要上下文理解
+
+            ## 评分逻辑
+            confidence = 0.0-1.0
+            - 1.0: 非常确定 (命中多条规则)
+            - 0.8+: 确定 (命中主要规则)
+            - 0.6-0.8: 中等 (规则冲突,需要LLM判断)
+            - <0.6: 不确定 (需要fallback到fast)
+        - id: user-prompt
+          role: user
+          text: |
+            现在,分析以下用户输入:
+            用户输入: {{#start.user_input#}}
+            用户信息:
+            - 用户ID: {{#start.user_id#}}
+            - 是否VIP: {{#start.is_vip#}}
+            - 对话历史: {{#start.conversation_history#}}
+
+            输出JSON:
+        selected: false
+        title: 路由决策LLM
+        type: llm
+        vision:
+          configs:
+            detail: high
+          enabled: false
+      height: 98
+      id: llm-router
+      position:
+        x: 350
+        y: 200
+      positionAbsolute:
+        x: 350
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # PARSER NODE
+    - data:
+        code: |
+          import json
+          import re
+
+          def main(llm_output: str) -> dict:
+              """解析LLM输出的JSON并返回路由结果"""
+              try:
+                  # 首先尝试直接解析
+                  try:
+                      result = json.loads(llm_output)
+                  except json.JSONDecodeError:
+                      # 如果直接解析失败,尝试提取JSON部分
+                      json_match = re.search(r'\{.*\}', llm_output, re.DOTALL)
+                      if json_match:
+                          result = json.loads(json_match.group())
+                      else:
+                          raise ValueError("无法从LLM输出中提取JSON")
+
+                  # 验证必需字段,提供默认值
+                  route = result.get("route", "fast")
+                  intent = result.get("intent", "unknown")
+                  confidence = float(result.get("confidence", 0.5))
+                  reasoning = result.get("reasoning", "自动路由")
+
+                  # 验证route值
+                  if route not in ["fast", "smart", "vip"]:
+                      route = "fast"
+
+                  # 如果confidence<0.6, 降级到fast
+                  if confidence < 0.6:
+                      route = "fast"
+
+                  return {
+                      "route": route,
+                      "intent": intent,
+                      "confidence": confidence,
+                      "reasoning": reasoning
+                  }
+              except Exception as e:
+                  # 任何错误都降级到fast路由
+                  return {
+                      "route": "fast",
+                      "intent": "routing_error",
+                      "confidence": 0.5,
+                      "reasoning": f"路由判断失败,使用默认fast通道: {str(e)}"
+                  }
+        code_language: python3
+        desc: '解析LLM返回的JSON并做fallback处理(鲁棒版本)'
+        outputs:
+          route:
+            children: null
+            type: string
+          intent:
+            children: null
+            type: string
+          confidence:
+            children: null
+            type: number
+          reasoning:
+            children: null
+            type: string
+        selected: false
+        title: JSON解析器
+        type: code
+        variables:
+        - value_selector:
+          - llm-router
+          - text
+          variable: llm_output
+      height: 54
+      id: code-parser
+      position:
+        x: 670
+        y: 200
+      positionAbsolute:
+        x: 670
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # ROUTE BRANCH NODE
+    - data:
+        cases:
+        - case_id: fast
+          conditions:
+          - comparison_operator: is
+            id: route-is-fast
+            value: fast
+            variable_selector:
+            - code-parser
+            - route
+          logical_operator: and
+        - case_id: smart
+          conditions:
+          - comparison_operator: is
+            id: route-is-smart
+            value: smart
+            variable_selector:
+            - code-parser
+            - route
+          logical_operator: and
+        - case_id: vip
+          conditions:
+          - comparison_operator: is
+            id: route-is-vip
+            value: vip
+            variable_selector:
+            - code-parser
+            - route
+          logical_operator: and
+        desc: '根据路由结果分流'
+        logical_operator: and
+        selected: false
+        title: 路由分支
+        type: if-else
+      height: 156
+      id: route-branch
+      position:
+        x: 990
+        y: 200
+      positionAbsolute:
+        x: 990
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # ===== FAST PATH NODES =====
+
+    # FAST: E_Sensor1
+    - data:
+        context:
+          enabled: false
+        desc: '快速情绪识别(快速通道)'
+        model:
+          completion_params:
+            temperature: 0.2
+            max_tokens: 50
+            response_format: 'json_object'
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            ## 角色
+            你是一个快速情绪识别器。输出JSON:
+            {
+              "primary_emotion": "开心|悲伤|平静|焦虑|愤怒",
+              "confidence": 0.0-1.0
+            }
+        - id: user
+          role: user
+          text: '用户输入: {{#start.user_input#}}'
+        selected: false
+        title: Fast-E_Sensor1
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: fast-emotion-sensor1
+      position:
+        x: 1310
+        y: 50
+      positionAbsolute:
+        x: 1310
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # FAST: Simple Chat
+    - data:
+        context:
+          enabled: false
+        desc: '简单对话生成'
+        model:
+          completion_params:
+            temperature: 0.7
+            max_tokens: 100
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+            温柔、亲切、善解人意的陪伴者。
+            根据用户情绪调整语气。简短自然,2-3句话。避免模板感。
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: Fast-SimpleChat
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: fast-simple-chat
+      position:
+        x: 1630
+        y: 50
+      positionAbsolute:
+        x: 1630
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # FAST: Critic
+    - data:
+        context:
+          enabled: false
+        desc: '快速通道质量检查'
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 100
+            response_format: 'json_object'
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是质量检查员。评估回复是否合格。输出JSON:
+            {"pass": true/false, "reason": "简要原因"}
+            检查标准: 1.相关性 2.自然度
+        - id: user
+          role: user
+          text: |
+            用户: {{#start.user_input#}}
+            回复: {{#fast-simple-chat.text#}}
+        selected: false
+        title: Fast-Critic
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: fast-critic
+      position:
+        x: 1950
+        y: 50
+      positionAbsolute:
+        x: 1950
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # FAST: Check Pass
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: fast-pass-check
+            value: 'true'
+            variable_selector:
+            - fast-critic
+            - text
+          logical_operator: and
+        desc: '检查是否通过'
+        logical_operator: and
+        selected: false
+        title: Fast-Check
+        type: if-else
+      height: 126
+      id: fast-check-pass
+      position:
+        x: 2270
+        y: 50
+      positionAbsolute:
+        x: 2270
+        y: 50
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # FAST: Retry
+    - data:
+        context:
+          enabled: false
+        desc: '重试生成'
+        model:
+          completion_params:
+            temperature: 0.8
+            max_tokens: 100
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣。
+            上一次回复被驳回,请改进。避免上次问题,更自然回应。
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: Fast-Retry
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: fast-simple-chat-retry
+      position:
+        x: 2270
+        y: 250
+      positionAbsolute:
+        x: 2270
+        y: 250
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # ===== SMART PATH NODES =====
+
+    # SMART: E_Sensor2
+    - data:
+        context:
+          enabled: false
+        desc: '深度情绪分析(智能通道)'
+        model:
+          completion_params:
+            temperature: 0.3
+            max_tokens: 200
+            response_format: 'json_object'
+          mode: chat
+          name: deepseek-chat
+          provider: deepseek
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            ## 角色
+            你是心理学家和情绪分析专家。输出JSON:
+            {
+              "primary_emotion": "焦虑|悲伤|孤独|自豪|恐惧|失望",
+              "intensity": 0.0-1.0,
+              "strategy": "empathy_first|validation|solution_oriented|celebrate|casual",
+              "analysis": "一句话分析"
+            }
+        - id: user
+          role: user
+          text: '用户输入: {{#start.user_input#}}'
+        selected: false
+        title: Smart-E_Sensor2
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: smart-emotion-sensor2
+      position:
+        x: 1310
+        y: 400
+      positionAbsolute:
+        x: 1310
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # SMART: Memory Retrieval
+    - data:
+        retrieval_mode: single
+        top_k: 3
+        desc: '从知识库检索用户记忆'
+        selected: false
+        title: Smart-MemoryRetrieval
+        type: knowledge-retrieval
+        query_variable:
+        - start
+        - user_input
+      height: 98
+      id: smart-memory-retrieval
+      position:
+        x: 1630
+        y: 400
+      positionAbsolute:
+        x: 1630
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # SMART: Orchestrator
+    - data:
+        context:
+          enabled: false
+        desc: '任务编排和规划'
+        model:
+          completion_params:
+            temperature: 0.3
+            max_tokens: 200
+            response_format: 'json_object'
+          mode: chat
+          name: deepseek-chat
+          provider: deepseek
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            ## 角色
+            你是任务编排大师。基于用户输入和情绪,制定执行计划。
+            输出JSON: {"plan": [...], "summary": "..."}
+        - id: user
+          role: user
+          text: |
+            用户: {{#start.user_input#}}
+            情绪: {{#smart-emotion-sensor2.text#}}
+            记忆: {{#smart-memory-retrieval.result#}}
+        selected: false
+        title: Smart-Orchestrator
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: smart-orchestrator
+      position:
+        x: 1950
+        y: 400
+      positionAbsolute:
+        x: 1950
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # SMART: Emotional Chat
+    - data:
+        context:
+          enabled: false
+        desc: '情绪自适应对话'
+        model:
+          completion_params:
+            temperature: 0.8
+            max_tokens: 200
+          mode: chat
+          name: deepseek-chat
+          provider: deepseek
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣,名为 {{#start.companion_name#}}。
+            人格: {{#start.personality_description#}}
+
+            当前情绪: {{#smart-emotion-sensor2.text#}}
+            策略: {{#smart-emotion-sensor2.text#}}
+            记忆: {{#smart-memory-retrieval.result#}}
+
+            回复要求: 长2-4句,体现情绪自适应,避免模板感
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: Smart-EmotionalChat
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: smart-emotional-chat
+      position:
+        x: 2270
+        y: 400
+      positionAbsolute:
+        x: 2270
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # SMART: Critic
+    - data:
+        context:
+          enabled: false
+        desc: '智能通道质量检查'
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 200
+            response_format: 'json_object'
+          mode: chat
+          name: gpt-3.5-turbo
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是质量检查员。评估回复是否合格。
+            检查: 1.相关性 2.一致性(记忆/人设) 3.安全性 4.自然度
+            输出JSON: {"pass": true/false, "reason": "..."}
+        - id: user
+          role: user
+          text: |
+            用户: {{#start.user_input#}}
+            回复: {{#smart-emotional-chat.text#}}
+            记忆: {{#smart-memory-retrieval.result#}}
+        selected: false
+        title: Smart-Critic
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: smart-critic
+      position:
+        x: 2590
+        y: 400
+      positionAbsolute:
+        x: 2590
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # SMART: Check Quality
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: smart-pass-check
+            value: 'true'
+            variable_selector:
+            - smart-critic
+            - text
+          logical_operator: and
+        desc: '检查是否通过'
+        logical_operator: and
+        selected: false
+        title: Smart-Check
+        type: if-else
+      height: 126
+      id: smart-check-quality
+      position:
+        x: 2910
+        y: 400
+      positionAbsolute:
+        x: 2910
+        y: 400
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # SMART: Retry
+    - data:
+        context:
+          enabled: false
+        desc: '智能通道重试'
+        model:
+          completion_params:
+            temperature: 0.8
+            max_tokens: 200
+          mode: chat
+          name: deepseek-chat
+          provider: deepseek
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的AI伴侣。
+            上一次回复被驳回,请改进。
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: Smart-Retry
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: smart-emotional-chat-retry
+      position:
+        x: 2910
+        y: 600
+      positionAbsolute:
+        x: 2910
+        y: 600
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # ===== VIP PATH NODE =====
+
+    # VIP: Emotional Chat
+    - data:
+        context:
+          enabled: false
+        desc: 'VIP心理咨询专家对话'
+        model:
+          completion_params:
+            temperature: 0.8
+            max_tokens: 300
+          mode: chat
+          name: gpt-4-turbo
+          provider: openai
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是 {{#start.user_name#}} 的VIP心理咨询伙伴,名为 {{#start.companion_name#}}。
+
+            你拥有心理咨询专业知识,能提供深度的情感支持和心理指导。
+
+            回复要求:
+            1. 运用心理学原理进行深度共情
+            2. 提供具体的心理健康建议
+            3. 创造安全、信任的咨询环境
+            4. 长度: 3-5句话,允许更详细的回应
+            5. 避免一般性安慰,提供专业见解
+
+            人格: {{#start.personality_description#}}
+        - id: user
+          role: user
+          text: '{{#start.user_input#}}'
+        selected: false
+        title: VIP-EmotionalChat
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: vip-emotional-chat
+      position:
+        x: 1310
+        y: 750
+      positionAbsolute:
+        x: 1310
+        y: 750
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # ===== FINAL NODES =====
+
+    # Merge Response (合并来自三条路径的回复)
+    - data:
+        code: |
+          def main(response_text: str) -> dict:
+              """接收来自任意一条路径的回复,格式化输出"""
+              return {
+                  "response": response_text.strip() if response_text else "抱歉,生成回复出现问题"
+              }
+        code_language: python3
+        desc: '统一处理来自三条路径的回复'
+        outputs:
+          response:
+            children: null
+            type: string
+        selected: false
+        title: 合并响应
+        type: code
+        variables:
+        - value_selector:
+          - fast-simple-chat
+          - text
+          variable: response_text
+      height: 54
+      id: merge-response
+      position:
+        x: 3100
+        y: 350
+      positionAbsolute:
+        x: 3100
+        y: 350
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # Final Critic
+    - data:
+        context:
+          enabled: false
+        desc: '最终质量检查和输出格式化'
+        model:
+          completion_params:
+            temperature: 0.1
+            max_tokens: 300
+          mode: chat
+          name: qwen-turbo
+          provider: tongyi
+        prompt_template:
+        - id: system
+          role: system
+          text: |
+            你是最终质量检查官。你的任务是:
+            1. 接收来自Fast/Smart/VIP三条路径之一的回复
+            2. 进行最终的安全检查
+            3. 如果安全,直接原样输出回复内容(不要加任何额外的包装或JSON格式)
+
+            安全检查标准:
+            - 无暴力、色情、违法内容
+            - 无个人隐私泄露
+            - 无歧视性语言
+
+            如果检测到不安全内容,输出: "抱歉,我无法回答这个问题。"
+        - id: user
+          role: user
+          text: |
+            用户输入: {{#start.user_input#}}
+
+            AI回复(来自对话生成模块): {{#merge-response.response#}}
+
+            请进行安全检查后输出最终回复:
+        selected: false
+        title: Final-Critic
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: final-critic
+      position:
+        x: 3230
+        y: 350
+      positionAbsolute:
+        x: 3230
+        y: 350
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+
+    # Answer
+    - data:
+        answer: |
+          {{#final-critic.text#}}
+        desc: '返回最终回复'
+        selected: false
+        title: 最终回复
+        type: answer
+        variables: []
+      height: 90
+      id: answer
+      position:
+        x: 3870
+        y: 350
+      positionAbsolute:
+        x: 3870
+        y: 350
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
