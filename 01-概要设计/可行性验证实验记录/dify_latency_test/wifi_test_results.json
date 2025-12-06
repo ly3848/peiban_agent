@@ -1,0 +1,42 @@
+{
+  "test_time": "2025-12-06T19:19:25.900899",
+  "config": {
+    "base_url": "http://49.234.55.33/v1",
+    "app_id": "N/A (应用级 API Key)",
+    "network_type": "wifi",
+    "query": "你好，我想和你聊聊天。今天天气不错，你觉得我们应该聊些什么有趣的话题呢？",
+    "num_tests": 3
+  },
+  "statistics": {
+    "network_type": "wifi",
+    "total_tests": 3,
+    "successful_tests": 3,
+    "success_rate": 100.0,
+    "ttfb": {
+      "avg_ms": 1254.9839814503987,
+      "min_ms": 1109.2760562896729,
+      "max_ms": 1399.048089981079,
+      "all_values": [
+        1109.2760562896729,
+        1399.048089981079,
+        1256.6277980804443
+      ]
+    },
+    "total_time": {
+      "avg_ms": 2726.4347076416016,
+      "min_ms": 2608.0009937286377,
+      "max_ms": 2796.6580390930176,
+      "all_values": [
+        2796.6580390930176,
+        2774.6450901031494,
+        2608.0009937286377
+      ]
+    },
+    "char_count": {
+      "avg": 59.0,
+      "min": 58,
+      "max": 60
+    },
+    "streaming_stable": true
+  }
+}
