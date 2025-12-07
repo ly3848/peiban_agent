@@ -10,13 +10,20 @@ CREATE TABLE IF NOT EXISTS test_ping (
 
 -- 插入一条测试数据
 INSERT INTO test_ping (test_data) 
-VALUES ('Initial test data');
+VALUES ('Initial test data')
+ON CONFLICT DO NOTHING;
 
 -- 如果需要允许匿名访问（使用 anon key），需要配置 RLS 策略
 -- 注意：这会让表对所有用户可读可写，仅用于测试
 
 -- 启用 RLS
 ALTER TABLE test_ping ENABLE ROW LEVEL SECURITY;
+
+-- 删除现有策略（如果存在）
+DROP POLICY IF EXISTS "Allow all read" ON test_ping;
+DROP POLICY IF EXISTS "Allow all insert" ON test_ping;
+DROP POLICY IF EXISTS "Allow all update" ON test_ping;
+DROP POLICY IF EXISTS "Allow all delete" ON test_ping;
 
 -- 允许所有人读取
 CREATE POLICY "Allow all read" ON test_ping
