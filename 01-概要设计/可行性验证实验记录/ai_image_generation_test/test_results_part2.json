@@ -1,0 +1,53 @@
+{
+  "test_time": "2025-12-07T13:26:05.509347",
+  "config": {
+    "base_url": "https://api.siliconflow.cn/v1",
+    "model": "black-forest-labs/FLUX.1-schnell",
+    "prompt": "1girl, cute, pink hair, student uniform, anime style",
+    "negative_prompt": "nsfw, ugly, deformed, blurry, bad anatomy, bad proportions",
+    "num_images": 4,
+    "output_dir": "generated_images"
+  },
+  "statistics": {
+    "success": true,
+    "total_images": 4,
+    "successful_images": 2,
+    "success_rate": 50.0,
+    "generation_time": {
+      "avg_ms": 2167.797088623047,
+      "min_ms": 2018.4850692749023,
+      "max_ms": 2317.1091079711914,
+      "all_values": [
+        2317.1091079711914,
+        2018.4850692749023
+      ]
+    },
+    "output_dir": "generated_images",
+    "results": [
+      {
+        "index": 1,
+        "success": true,
+        "generation_time_ms": 2317.1091079711914,
+        "image_path": "generated_images/image_01_1765085158.png",
+        "image_filename": "image_01_1765085158.png"
+      },
+      {
+        "index": 2,
+        "success": true,
+        "generation_time_ms": 2018.4850692749023,
+        "image_path": "generated_images/image_02_1765085162.png",
+        "image_filename": "image_02_1765085162.png"
+      },
+      {
+        "index": 3,
+        "success": false,
+        "error": "HTTP 429: {\"code\":50604,\"message\":\"Request was rejected due to rate limiting. Details: IPM limit reached.\",\"data\":null}"
+      },
+      {
+        "index": 4,
+        "success": false,
+        "error": "HTTP 429: {\"code\":50604,\"message\":\"Request was rejected due to rate limiting. Details: IPM limit reached.\",\"data\":null}"
+      }
+    ]
+  }
+}

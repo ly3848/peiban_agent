@@ -1,0 +1,95 @@
+{
+  "test_time": "2025-12-07T13:25:12.155794",
+  "config": {
+    "base_url": "https://api.siliconflow.cn/v1",
+    "model": "black-forest-labs/FLUX.1-schnell",
+    "prompt": "1girl, cute, pink hair, student uniform, anime style",
+    "negative_prompt": "nsfw, ugly, deformed, blurry, bad anatomy, bad proportions",
+    "num_images": 10,
+    "output_dir": "generated_images"
+  },
+  "statistics": {
+    "success": true,
+    "total_images": 10,
+    "successful_images": 6,
+    "success_rate": 60.0,
+    "generation_time": {
+      "avg_ms": 2470.709244410197,
+      "min_ms": 1980.5092811584473,
+      "max_ms": 3863.7356758117676,
+      "all_values": [
+        2167.06919670105,
+        1980.5092811584473,
+        2643.8910961151123,
+        2090.420961380005,
+        2078.6292552948,
+        3863.7356758117676
+      ]
+    },
+    "output_dir": "generated_images",
+    "results": [
+      {
+        "index": 1,
+        "success": true,
+        "generation_time_ms": 2167.06919670105,
+        "image_path": "generated_images/image_01_1765085086.png",
+        "image_filename": "image_01_1765085086.png"
+      },
+      {
+        "index": 2,
+        "success": true,
+        "generation_time_ms": 1980.5092811584473,
+        "image_path": "generated_images/image_02_1765085090.png",
+        "image_filename": "image_02_1765085090.png"
+      },
+      {
+        "index": 3,
+        "success": true,
+        "generation_time_ms": 2643.8910961151123,
+        "image_path": "generated_images/image_03_1765085094.png",
+        "image_filename": "image_03_1765085094.png"
+      },
+      {
+        "index": 4,
+        "success": true,
+        "generation_time_ms": 2090.420961380005,
+        "image_path": "generated_images/image_04_1765085097.png",
+        "image_filename": "image_04_1765085097.png"
+      },
+      {
+        "index": 5,
+        "success": true,
+        "generation_time_ms": 2078.6292552948,
+        "image_path": "generated_images/image_05_1765085101.png",
+        "image_filename": "image_05_1765085101.png"
+      },
+      {
+        "index": 6,
+        "success": true,
+        "generation_time_ms": 3863.7356758117676,
+        "image_path": "generated_images/image_06_1765085106.png",
+        "image_filename": "image_06_1765085106.png"
+      },
+      {
+        "index": 7,
+        "success": false,
+        "error": "HTTP 429: {\"code\":50604,\"message\":\"Request was rejected due to rate limiting. Details: IPM limit reached.\",\"data\":null}"
+      },
+      {
+        "index": 8,
+        "success": false,
+        "error": "HTTP 429: {\"code\":50604,\"message\":\"Request was rejected due to rate limiting. Details: IPM limit reached.\",\"data\":null}"
+      },
+      {
+        "index": 9,
+        "success": false,
+        "error": "HTTP 429: {\"code\":50604,\"message\":\"Request was rejected due to rate limiting. Details: IPM limit reached.\",\"data\":null}"
+      },
+      {
+        "index": 10,
+        "success": false,
+        "error": "HTTP 429: {\"code\":50604,\"message\":\"Request was rejected due to rate limiting. Details: IPM limit reached.\",\"data\":null}"
+      }
+    ]
+  }
+}
